@@ -17,21 +17,8 @@ class Card{
         }
     }
 } 
-/*
-let allCard = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, "Jack", "Queen", "King", "Ace"];
 
-let deck = {};
-for(let i=1; i<=14; i++){
-    deck[allCard[i-1]] = new Card("Clubs", i);
-    deck[allCard[i-1]] = new Card("Spades", i);
-    deck[allCard[i-1]] = new Card("Hearts", i);
-    deck[allCard[i-1]] = new Card("Diamonds", i);
-}
-console.log(deck);
-*/
-//Abdullah's code ^
 
-//Arjun's Code V
 var fullDeck= new Array(52);
 var tempSuite=""
 var index=0;
@@ -53,4 +40,19 @@ for(var i=0; i<4; i++){
            
     }
 }
+
+function randomize (arr) {
+ 
+    
+    for (let i = arr.length - 1; i > 0; i--){
+     
+        // Pick a random index from 0 to i inclusive
+        let j = Math.floor(Math.random() * (i + 1)); 
+        // Swap arr[i] with the element at the random index
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    } 
+} 
+
+//print the entire deck
+randomize(fullDeck)
 fullDeck.forEach((element) => console.log(element));
