@@ -59,13 +59,34 @@ class Deck{
     }
 }
 
+class Game{
+    playerHands = {};
+    players = 0;
+    deck = new Deck();
+    start(){
+        this.players = prompt("How many players?");
+        this.deck.shuffle();
+        for(let i=0; i<this.players; i++){
+            for(let x=0; x<2; x++){
+                //gives each player 2 cards could change to give each one twice?
+                this.playerHands[i] = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
+            }
+        }
+    }
+
+    print(){
+        console.log(this.playerHands);
+    }
+}
+
+let game = new Game();
+game.start();
+game.print();
 
 
-
-
-var deck= new Deck();
-console.log("Unshuffled deck: ")
-deck.print();
-deck.shuffle();
-console.log("Shuffled deck")
-deck.print();
+// var deck= new Deck();
+// console.log("Unshuffled deck: ")
+// deck.print();
+// deck.shuffle();
+// console.log("Shuffled deck")
+// deck.print();
