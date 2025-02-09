@@ -60,24 +60,47 @@ class Deck{
 }
 
 class Game{
-    playerHands = {};
     players = 0;
     deck = new Deck();
+    allPlayers = [];
+    blinds = ["Small", "Big"]
+
     start(){
+
         this.players = prompt("How many players?");
         this.deck.shuffle();
         for(let i=0; i<this.players; i++){
-            for(let x=0; x<2; x++){
-                //gives each player 2 cards could change to give each one twice?
-                this.playerHands[i] = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
+            this.allPlayers.push(new Player());
+            if(i>1){
+                this.blinds.push("");
             }
+            //gives each player 2 cards could change to give each one twice?
+            this.allPlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
+            this.allPlayers[i].playerBlind = this.blinds[i];
         }
     }
 
     print(){
-        console.log(this.playerHands);
+        console.log(this.allPlayers);
     }
 }
+
+class Player{
+    constructor(){
+        this.playerBlind = "";
+        this.playerMoney = 0;
+        this.playerHand = [];
+    }
+}
+
+
+// playerInfo = {};
+// blinds = ["Small", "Big"]
+// if(i>1){
+//     this.blinds.append("");
+// }
+
+// this.playerInfo[i] = [this.blinds[i], 0, ]
 
 let game = new Game();
 game.start();
