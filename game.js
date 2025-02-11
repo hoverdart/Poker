@@ -63,16 +63,17 @@ class Game{
     players = 0;
     deck = new Deck();
     allPlayers = [];
-    blinds = ["Small", "Big"]
-
     start(){
 
         this.players = prompt("How many players?");
         this.deck.shuffle();
         for(let i=0; i<this.players; i++){
             this.allPlayers.push(new Player());
-            if(i>1){
-                this.blinds.push("");
+            if(i=0){
+                this.allPlayers[i].playerBlind = "small"
+            }
+            else if(i=1){
+                this.allPlayers[i].playerBlind = "big"
             }
             //gives each player 2 cards could change to give each one twice?
             this.allPlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
@@ -92,15 +93,6 @@ class Player{
         this.playerHand = [];
     }
 }
-
-
-// playerInfo = {};
-// blinds = ["Small", "Big"]
-// if(i>1){
-//     this.blinds.append("");
-// }
-
-// this.playerInfo[i] = [this.blinds[i], 0, ]
 
 let game = new Game();
 game.start();
