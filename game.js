@@ -73,16 +73,11 @@ class Game{
             this.allPlayers.push(new Player());
             console.log("New player created, i="+i);
             if(i==0){
-                //skips this loop for some reason
-                console.log("hi");
                 this.allPlayers[i].playerBlind = "small";
             }
             else if (i==1){
-                //above comment is why the undefined error pops up, its doing i=1 first for some reason
-                console.log("bye");
                 this.allPlayers[i].playerBlind = "big";
             }
-            //gives each player 2 cards could change to give each one twice?
             this.allPlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
         }
     }
@@ -103,11 +98,3 @@ class Player{
 let game = new Game();
 game.start();
 game.print();
-
-
-// var deck= new Deck();
-// console.log("Unshuffled deck: ")
-// deck.print();
-// deck.shuffle();
-// console.log("Shuffled deck")
-// deck.print();
