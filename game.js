@@ -45,7 +45,7 @@ class Deck{
 
     shuffle(){
         for (let i = this.fullDeck.length - 1; i > 0; i--){
-     
+            
             // Pick a random index from 0 to i inclusive
             let j = Math.floor(Math.random() * (i + 1)); 
             // Swap fullDeck[i] with the element at the random index
@@ -69,15 +69,19 @@ class Game{
         this.deck.shuffle();
         for(let i=0; i<this.players; i++){
             this.allPlayers.push(new Player());
+            console.log("yes");
             if(i=0){
-                this.allPlayers[i].playerBlind = "small"
+                //skips this loop for some reason
+                console.log("hi");
+                this.allPlayers[i].playerBlind = "small";
             }
-            else if(i=1){
-                this.allPlayers[i].playerBlind = "big"
+            else if (i=1){
+                //above comment is why the undefined error pops up, its doing i=1 first for some reason
+                console.log("bye");
+                this.allPlayers[i].playerBlind = "big";
             }
             //gives each player 2 cards could change to give each one twice?
             this.allPlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
-            this.allPlayers[i].playerBlind = this.blinds[i];
         }
     }
 
