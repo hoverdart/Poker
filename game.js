@@ -67,15 +67,17 @@ class Game{
 
         this.players = prompt("How many players?");
         this.deck.shuffle();
+       
         for(let i=0; i<this.players; i++){
+            
             this.allPlayers.push(new Player());
-            console.log("yes");
-            if(i=0){
+            console.log("New player created, i="+i);
+            if(i==0){
                 //skips this loop for some reason
                 console.log("hi");
                 this.allPlayers[i].playerBlind = "small";
             }
-            else if (i=1){
+            else if (i==1){
                 //above comment is why the undefined error pops up, its doing i=1 first for some reason
                 console.log("bye");
                 this.allPlayers[i].playerBlind = "big";
