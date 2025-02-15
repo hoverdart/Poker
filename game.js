@@ -63,9 +63,20 @@ class Game{
     players = 0;
     deck = new Deck();
     allPlayers = [];
+    pot = 0;
+    small = 0;
+    big = 0;
+    startingMoney = 0;
+    boardCards = [];
     start(){
 
-        this.players = prompt("How many players?");
+        while (this.players<2 || this.players>10){
+            console.log(this.players);
+            this.players = prompt("How many players?(Min. 2, Max. 10)");
+            this.small = prompt("Small Blind Amount");
+            this.big = prompt("Big Blind Amount")
+            this.startingMoney = prompt("Starting Money")
+        }
         this.deck.shuffle();
        
         for(let i=0; i<this.players; i++){
@@ -79,7 +90,31 @@ class Game{
                 this.allPlayers[i].playerBlind = "big";
             }
             this.allPlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
+            this.allPlayers[i].playerMoney = this.startingMoney;
         }
+    }
+
+    nextRound(){
+        //burn card
+        this.deck.fullDeck.splice(0, 1);
+        
+        for(let i=0; i<3; i++){
+            this.boardCards[i] = this.deck.fullDeck.shift();
+        }
+
+        for(let i = 0; i<this.allPlayers.length; i++){
+            if(this.allPlayers[i].playerBlind == "small"){
+                if(this.allPlayers[i].playerMoney >= this.small){
+                    this.allPlayers[i].playerMoney -= this.small;
+                }
+            }
+            else if(this.allPlayers[i].playerBlind == "big"){
+                if(this.allPlayers[i].playerMoney >= this.big){
+                    this.allPlayers[i].playerMoney -= this.big;
+                }
+            }
+        }
+        
     }
 
     print(){
@@ -97,4 +132,6 @@ class Player{
 
 let game = new Game();
 game.start();
+game.print();
+game.nextRound();
 game.print();
