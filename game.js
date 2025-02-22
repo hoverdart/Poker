@@ -67,11 +67,12 @@ class Game{
     small = 0;
     big = 0;
     startingMoney = 0;
+    playerID=0
     boardCards = [];
+    round = 1;
     start(){
 
         while (this.players<2 || this.players>10){
-            console.log(this.players);
             this.players = prompt("How many players?(Min. 2, Max. 10)");
             this.small = prompt("Small Blind Amount");
             this.big = prompt("Big Blind Amount")
@@ -91,29 +92,63 @@ class Game{
             }
             this.allPlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
             this.allPlayers[i].playerMoney = this.startingMoney;
+            this.allPlayers[i].id = i;
         }
+        this.playerID = Math.floor(Math.random()*(this.allPlayers.length+1));
     }
 
     nextRound(){
+        this.round+=1;
+        if(this.round==1){
+            for(let i = 0; i<this.allPlayers.length; i++){
+                if(this.allPlayers[i].playerBlind == "small"){
+                    if(i<this.allPlayers.length-2){
+                        this.allPlayers[i].playerBlind="";
+                        this.allPlayers[i+1].playerBlind="small";
+                        this.allPlayers[i+2].playerBlind="big";
+                    }
+                    else if(i==this.allPlayers.length-1){
+                        this.allPlayers[i].playerBlind="";
+                        this.allPlayers[i+1].playerBlind="small";
+                        this.allPlayers[0].playerBlind="big";
+                    }
+                    else{
+                        this.allPlayers[i].playerBlind="";
+                        this.allPlayers[0].playerBlind="small";
+                        this.allPlayers[1].playerBlind="big";
+                    }
+                    break;
+                }
+                
+                else if(this.allPlayers[i].playerBlind == "big"){
+                    if(this.allPlayers[i].playerMoney >= this.big){
+                        this.allPlayers[i].playerMoney -= this.big;
+                    }
+                }
+            }
+        }
+
         //burn card
         this.deck.fullDeck.splice(0, 1);
-        
+
+        for(let i = 0; i<this.allPlayers.length; i++){
+            if(this.allPlayers[i].playerBlind == "small"){
+                this.allPlayers[i].playerMoney -= this.small;
+                if(i==this.allPlayers.length-1){
+                    this.allPlayers[0].playerMoney -= this.big;
+                }
+                else{
+                    this.allPlayers[i+1].playerMoney -= this.big;
+                }
+            }
+        }
+
+        if(this.round == 2)
         for(let i=0; i<3; i++){
             this.boardCards[i] = this.deck.fullDeck.shift();
         }
 
-        for(let i = 0; i<this.allPlayers.length; i++){
-            if(this.allPlayers[i].playerBlind == "small"){
-                if(this.allPlayers[i].playerMoney >= this.small){
-                    this.allPlayers[i].playerMoney -= this.small;
-                }
-            }
-            else if(this.allPlayers[i].playerBlind == "big"){
-                if(this.allPlayers[i].playerMoney >= this.big){
-                    this.allPlayers[i].playerMoney -= this.big;
-                }
-            }
-        }
+
         
     }
 
@@ -127,11 +162,11 @@ class Player{
         this.playerBlind = "";
         this.playerMoney = 0;
         this.playerHand = [];
+        this.id = 0;
     }
 }
 
 let game = new Game();
 game.start();
-game.print();
 game.nextRound();
 game.print();
