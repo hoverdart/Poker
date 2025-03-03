@@ -42,7 +42,7 @@ class Game {
     this.small = 0;
     this.big = 0;
     this.startingMoney = 0;
-    this.game = 1;
+    this.game = 0;
     this.round=1;
     this.boardCards = [];
   }
