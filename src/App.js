@@ -54,80 +54,99 @@ class Player {
     }
   }
 
-  isOrdered(){
-    let values = [];
-    for(let i=0;i<this.fullHand.length; i++){
-      values.push(this.fullHand[i].value);
-    }
-    values.sort();
-    let flag = true;
-    for(let i=0; i<values.length-1; i++){
-      if(values[i+1] - values[i] !== 1){
-        flag = false;
-        break;
+  getCombinations(arr, k) { //gets all possible combos of hand
+    let result = [];
+    const combine = (start, combo) => {
+      if (combo.length === k) {
+        result.push([...combo]);
+        return;
       }
-    }
-    return flag;
+      for (let i = start; i < arr.length; i++) {
+        combine(i + 1, [...combo, arr[i]]);
+      }
+    };
+    combine(0, []);
+    return result;
   }
+  isOrdered(hand) { //checks if the card is a straight
+    let values = hand.map(card => card.value);
+    if (values.includes(1)) {
+      values.push(14); // Add Ace as 14 for high straights
+    }
+    values = [...new Set(values)]; // Remove duplicates
+    values.sort((a, b) => a - b); // Sort numerically
+    for (let i = 0; i <= values.length - 5; i++) {
+      if (values[i + 4] - values[i] === 4) {
+        return true;
+      }
+    }
+    if (values.includes(1) && values.includes(2) && values.includes(3) && values.includes(4) && values.includes(5)) {
+      return true;
+    }
+    return false;
+  }
+  
+  type() { 
+    let bestHandType = "high card"; // Default lowest hand
+    // Get all possible 5-card combinations from the 7-card hand
+    let possibleHands = this.getCombinations(this.fullHand, 5);
+    for (let hand of possibleHands) {
+        let suitFlag = true;
+        for (let i = 1; i < hand.length; i++) {
+            if (hand[i].suit !== hand[i - 1].suit) {
+                suitFlag = false;
+                break;
+            }
+        }
+        let handRank = 0; // Stores rank (higher = stronger hand)
+        // **Check for Royal Flush**
+        if (suitFlag) { // If suit are same
+            let royalFlush = ["Ace", "King", "Queen", "Jack", "10"];
+            if (hand.every(card => royalFlush.includes(card.name))) { //checks every card in hand, if its in royalFlush
+                handRank = 10;
+            } 
+        }
+        // **Check for Straight Flush**
+        if (suitFlag && this.isOrdered(hand)) {
+            handRank = Math.max(handRank, 9);
+        }
+        // Count occurrences of each card value
+        let countsOfEach = new Array(13).fill(0);
+        for (let card of hand) {
+            countsOfEach[card.value - 1]++;
+        }
+        let pairs = 0, triple = false, quad = false;
+        for (let count of countsOfEach) {
+            if (count === 2) pairs++;
+            else if (count === 3) triple = true;
+            else if (count === 4) quad = true;
+        }
+        // **Four of a Kind**
+        if (quad) handRank = Math.max(handRank, 8);
+        // **Full House**
+        if (triple && pairs === 1) handRank = Math.max(handRank, 7);
+        // **Flush**
+        if (suitFlag) handRank = Math.max(handRank, 6);
+        // **Straight**
+        if (this.isOrdered(hand)) handRank = Math.max(handRank, 5);
+        // **Three of a Kind**
+        if (triple) handRank = Math.max(handRank, 4);
+        // **Two Pair**
+        if (pairs === 2) handRank = Math.max(handRank, 3);
+        // **One Pair**
+        if (pairs === 1) handRank = Math.max(handRank, 2);
 
-  type(){ // Determines the type of hand that the player has, assigns it to handType
-    let suitFlag = true;
-    for(let i=1; i<this.fullHand.length;i++){
-      if (this.fullHand[i].suit !== this.fullHand[i-1].suit){
-        suitFlag = false;
-        break;
-      }
+        // Update best hand if this hand is stronger
+        const handRankings = [
+            "high card", "pair", "two pair", "three of a kind",
+            "straight", "flush", "full house", "four of a kind",
+            "straight flush", "royal flush"
+        ];
+        if (handRank > handRankings.indexOf(bestHandType)) {
+            bestHandType = handRankings[handRank-1];
+        }
     }
-    if (suitFlag){ //if suits are the same
-      this.handType="flush";
-      let determineRoyal = ["Ace", "King", "Queen", "Jack", "10"];
-      let determineRoyalFlag=true;
-      for(let i=0; i<this.fullHand.length;i++){
-        if (!determineRoyal.includes(this.fullHand[i].name)){
-          determineRoyalFlag = false;
-          break;
-        }
-      }
-      if (determineRoyalFlag){
-        this.handType="royal flush";
-      }else if(this.isOrdered()){
-        this.handType="straight flush";
-      }
-    }else{ //if suits are NOT the same
-      let countsOfEach = [0,0,0,0,0,0,0,0,0,0,0,0,0]
-      for(let i=0; i<this.fullHand.length;i++){
-        countsOfEach[this.fullHand[i].value-1] +=1;
-      }
-      let pairs = 0;
-      let triple = false;
-      let quad = false;
-      for(let i=0; i<countsOfEach.length;i++){
-        if (countsOfEach[i] === 2){
-          pairs+=1;
-        }else if(countsOfEach[i] === 3){
-          triple = true
-        }else if(countsOfEach[i] === 4){
-          quad = true
-          break
-        }
-      }
-      if (quad){
-        this.handType="four of a kind";
-      }else if(triple){
-        if(pairs === 1){
-          this.handType="full house"
-        }else{
-          this.handType="three of a kind"
-        }
-      }else if(pairs > 0){
-        this.handType = "pair"
-        if (pairs === 2){
-          this.handType="two pair"
-        }
-      }else{
-        this.handType="high card"
-      }
-    }
+    this.handType = bestHandType;
   }
 }
 
