@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import GameForm from "./components/GameForm";
 import GameDisplay from "./components/GameDisplay";
 
@@ -18,6 +18,7 @@ class Card {
     this.name = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"][value - 1];
   }
 }
+
 class Deck {
   constructor() {
     this.fullDeck = [];
@@ -34,6 +35,7 @@ class Deck {
     }
   }
 }
+
 class Player {
   constructor(id) {
     this.id = id;
@@ -42,8 +44,9 @@ class Player {
     this.playerHand = [];
     this.fullHand=[];
     this.handType = "N/A";
+    this.folded=false;
+    this.turn="";
   }
-
   createHand(communityCards){
     this.fullHand = []; //fullHand has the entire hand
     for(let i=0;i<this.playerHand.length;i++){
@@ -53,7 +56,6 @@ class Player {
       this.fullHand.push(communityCards[i])
     }
   }
-
   getCombinations(arr, k) { //gets all possible combos of hand
     let result = [];
     const combine = (start, combo) => {
@@ -85,7 +87,6 @@ class Player {
     }
     return false;
   }
-  
   type() { 
     let bestHandType = "high card"; // Default lowest hand
     // Get all possible 5-card combinations from the 7-card hand
@@ -164,7 +165,6 @@ class Game {
     this.boardCards = [];
     this.winner=0;
     this.playerID=0;
-    this.playerMove = null;
   }
 
   start(players, small, big, startingMoney) {
@@ -182,11 +182,10 @@ class Game {
       this.allPlayers.push(newPlayer);
     }
     this.playerID = Math.floor(Math.random()*this.allPlayers.length); // Creates user player
-    console.log(this.playerID);
     this.nextGame()
   }
 
-  nextGame() { // essentially start of a new game; this should be run directly after "start" to get to the "preflop" stage
+  nextGame() { // essentially start of a new game
     this.game +=1;
     this.round = 1;
     //Depositing money for the winnah
@@ -201,7 +200,8 @@ class Game {
 
     for (let i = 0; i < this.players; i++) { // Player's decks are remade
       this.allPlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
-      this.allPlayers[i].handType="N/A"
+      this.allPlayers[i].handType="N/A";
+      this.allPlayers[i].folded=false;
     }
     for (let i = 0; i < this.allPlayers.length; i++) { // Moving the small/big blinds up
       if (this.allPlayers[i].playerBlind === "big"){
@@ -284,11 +284,14 @@ class Game {
         }
         return 0; // Completely tied
     }
-
-    let playas = [...this.allPlayers]; // Copy players list
+    let playas = []; // Copy players list
+    for (let i=0; i<this.allPlayers.length; i++){
+      if (!this.allPlayers[i].folded) playas.push(this.allPlayers[i]);
+    }
     playas.sort(comparePlayers); // Sort from best to worst
     return playas[0]; // The best player is now at index 0
   }
+
   print() {
     console.log("Players Info:", this.allPlayers);
     console.log("Community Cards: ",this.boardCards);
@@ -300,19 +303,29 @@ function App() {
   const [game, setGame] = useState(null);
   const [gameNum, setGameNum] = useState(1);
   const [round, setRound] = useState(1);
-  
+  const [turn, setTurn] = useState(0); // First player after dealer, FIX THIS
+  const [time, toGo] = useState(0);
+  const [nextR, changeNextR] = useState(false);
+
   function initializeValues(playerCt, smallAmt, largeAmt, money) {
     const newGame = new Game();
     newGame.start(playerCt, smallAmt, largeAmt, money);
     setGame(newGame);
     setGameNum(1);
     setRound(1);
+    setTurn(0)
+    toGo(time+1)
   }
   function handleNextRound() {
     if (game) {
       game.nextRound();
       setGame(game);
       setRound(game.round);
+      changeNextR(false);
+      for(let i=0; i<game.allPlayers.length; i++){
+        if(!game.allPlayers[i].folded){ setTurn(i); break;}
+      }
+      toGo(time+1);
     }
   }
 
@@ -322,7 +335,57 @@ function App() {
       setGame(game);
       setGameNum(game.game);
       setRound(game.round);
+      changeNextR(false);
+      setTurn(0);
+      toGo(time+1);
     }
+  }
+  const nextTurn = () => {
+    let i = 1;
+    while (turn + i < game.allPlayers.length) {
+      if (!game.allPlayers[turn + i].folded) {
+        setTurn(turn + i);
+        return; // Exit function so changeNextR doesn't run
+      }
+      i += 1;
+    }
+  changeNextR(true);
+  };
+
+  const aiMove = () => {
+    setTimeout(() => {
+      const actions = ["bet","call","check", "fold"]; //for now, until bet/call are implemented
+      const randomAction = actions[Math.floor(Math.random() * actions.length)];
+      if (randomAction === "bet") bet();
+      if (randomAction === "call") call();
+      if (randomAction === "check") check();
+      if (randomAction === "fold") fold();
+      nextTurn();
+    }, 3000); 
+  };
+
+  useEffect(() => {
+    if (game && game.allPlayers[turn].id !== game.playerID && game.round !== 4) {
+      aiMove();
+    }
+  }, [turn, time]);
+
+  function bet(){
+    console.log("Player ",game.allPlayers[turn].id+1,"has 'bet'");
+    nextTurn();
+  }
+  function call(){
+    console.log("Player ",game.allPlayers[turn].id+1,"has 'called'");
+    nextTurn();
+  }
+  function check(){
+    console.log("Player ",game.allPlayers[turn].id+1,"has 'checked'");
+    nextTurn();
+  }
+  function fold(){
+    console.log("Player ",game.allPlayers[turn].id+1,"has 'folded'");
+    game.allPlayers[turn].folded=true;
+    nextTurn();
   }
 
   return (
@@ -368,7 +431,7 @@ function App() {
       {/* Game Display Section */}
       <section className="container mt-4">
         {game && (
-          <GameDisplay gameNum={gameNum} round={round} game={game} handleNextRound={handleNextRound} handleNextGame={handleNextGame}/>
+          <GameDisplay gameNum={gameNum} round={round} game={game} handleNextRound={handleNextRound} handleNextGame={handleNextGame} turn={turn} check={check} fold={fold} raise={bet} call={call} nextR={nextR}/>
         )}
       </section>
     </div>

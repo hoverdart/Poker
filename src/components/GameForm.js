@@ -35,7 +35,7 @@ const GameForm = (props) => {
                         <input type="number" className="form-control" id="largeBlind" placeholder="Enter amount" value={largeAmt} onChange={(e)=> {setLarge(e.target.valueAsNumber)}} />
                     </div>
                     {largeAmt <= 0 && <div className="text-danger">Must be greater than $0.</div>}
-                    {largeAmt < smallAmt && <div className="text-danger">How tf is the small bid larger than the "large" bid???</div>}
+                    {largeAmt < smallAmt && <div className="text-danger">Large Bid Must Be Larger than the Small Bid.</div>}
                 </div>
 
                 <div className="col mb-2">
