@@ -26,7 +26,10 @@ const GameDisplay = (props) => {
                 </p>
                 
                 <p><strong>Hand Type:</strong> {player.handType}</p>
-
+                {player.id === props.game.playerID && <button className="btn btn-primary mx-2">Check</button>}
+                {player.id === props.game.playerID && <button className="btn btn-warning mx-2">Call</button>}
+                {player.id === props.game.playerID && <button className="btn btn-success-emphasis mx-2">Raise</button>}
+                {player.id === props.game.playerID && <button className="btn btn-danger mx-2">Fold</button>}
               </div>
               ))}
             </div>

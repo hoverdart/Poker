@@ -163,6 +163,8 @@ class Game {
     this.round=1;
     this.boardCards = [];
     this.winner=0;
+    this.playerID=0;
+    this.playerMove = null;
   }
 
   start(players, small, big, startingMoney) {
@@ -179,6 +181,8 @@ class Game {
       newPlayer.playerMoney = this.startingMoney;
       this.allPlayers.push(newPlayer);
     }
+    this.playerID = Math.floor(Math.random()*this.allPlayers.length); // Creates user player
+    console.log(this.playerID);
     this.nextGame()
   }
 
