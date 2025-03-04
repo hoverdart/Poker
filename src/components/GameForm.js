@@ -1,13 +1,17 @@
 import { useState } from "react";
 
 const GameForm = (props) => {
+    //Important States for the GameForm values
     const [playerCount, setPlayerCount] = useState(2);
     const [smallAmt, setSmall] = useState();
     const [largeAmt, setLarge] = useState();
     const [money, setMoney] = useState();
+
+    // Submit function for the form
     function submit(){
         props.onSubmit(playerCount,smallAmt,largeAmt,money);
     }
+    //Checks if the form is ready to submit or not, and undisables the button if it is.
     const isFormValid = playerCount >= 2 && smallAmt > 0 && largeAmt > 0 && money > 0;
     return (
         <div className="container-sm p-4 rounded shadow bg-light">

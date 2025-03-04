@@ -45,10 +45,10 @@ class Player {
     this.fullHand=[];
     this.handType = "N/A";
     this.folded=false;
-    this.turn="";
   }
-  createHand(communityCards){
-    this.fullHand = []; //fullHand has the entire hand
+  //creates "full hand" w/ community cards
+  createHand(communityCards){ 
+    this.fullHand = []; 
     for(let i=0;i<this.playerHand.length;i++){
       this.fullHand.push(this.playerHand[i])
     }
@@ -56,7 +56,8 @@ class Player {
       this.fullHand.push(communityCards[i])
     }
   }
-  getCombinations(arr, k) { //gets all possible combos of hand
+  //gets all possible combos of an array of length k
+  getCombinations(arr, k) { 
     let result = [];
     const combine = (start, combo) => {
       if (combo.length === k) {
@@ -70,10 +71,11 @@ class Player {
     combine(0, []);
     return result;
   }
-  isOrdered(hand) { //checks if the card is a straight
+  //checks if the card is a straight
+  isOrdered(hand) { 
     let values = hand.map(card => card.value);
     if (values.includes(1)) {
-      values.push(14); // Add Ace as 14 for high straights
+      values.push(14); // Ace = 14 for high straights
     }
     values = [...new Set(values)]; // Remove duplicates
     values.sort((a, b) => a - b); // Sort numerically
@@ -87,9 +89,9 @@ class Player {
     }
     return false;
   }
+  //finds out the best hand type out of all possible hand combos
   type() { 
     let bestHandType = "high card"; // Default lowest hand
-    // Get all possible 5-card combinations from the 7-card hand
     let possibleHands = this.getCombinations(this.fullHand, 5);
     for (let hand of possibleHands) {
         let suitFlag = true;
@@ -101,7 +103,7 @@ class Player {
         }
         let handRank = 0; // Stores rank (higher = stronger hand)
         // **Check for Royal Flush**
-        if (suitFlag) { // If suit are same
+        if (suitFlag) {
             let royalFlush = ["Ace", "King", "Queen", "Jack", "10"];
             if (hand.every(card => royalFlush.includes(card.name))) { //checks every card in hand, if its in royalFlush
                 handRank = 10;
@@ -136,13 +138,8 @@ class Player {
         if (pairs === 2) handRank = Math.max(handRank, 3);
         // **One Pair**
         if (pairs === 1) handRank = Math.max(handRank, 2);
-
         // Update best hand if this hand is stronger
-        const handRankings = [
-            "high card", "pair", "two pair", "three of a kind",
-            "straight", "flush", "full house", "four of a kind",
-            "straight flush", "royal flush"
-        ];
+        const handRankings = [ "high card", "pair", "two pair", "three of a kind", "straight", "flush", "full house", "four of a kind","straight flush", "royal flush"];
         if (handRank > handRankings.indexOf(bestHandType)) {
             bestHandType = handRankings[handRank-1];
         }
@@ -166,7 +163,7 @@ class Game {
     this.winner=0;
     this.playerID=0;
   }
-
+  //Initializes game by setting values
   start(players, small, big, startingMoney) {
     this.players = players;
     this.small = small;
@@ -184,8 +181,7 @@ class Game {
     this.playerID = Math.floor(Math.random()*this.allPlayers.length); // Creates user player
     this.nextGame()
   }
-
-  nextGame() { // essentially start of a new game
+  nextGame() { // Essentially start of a new game, resetting values
     this.game +=1;
     this.round = 1;
     //Depositing money for the winnah
@@ -233,8 +229,8 @@ class Game {
     }
     this.print()
   }
-
-  nextRound() { // This starts creating community cards
+  //Moves on round, creates community cards, gets the winner
+  nextRound() {
     this.round+=1;
     if (this.round === 2) { // adding cards to community cards
       this.boardCards = this.deck.fullDeck.splice(0, 3);
@@ -258,6 +254,7 @@ class Game {
     }
     this.print()
   }
+  //Finds the winner by ranking hands, then card values, then suits.
   determineRanking() {
     function comparePlayers(playerA, playerB) {
         let handRanking = ["high card", "pair", "two pair", "three of a kind", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"];
@@ -291,7 +288,7 @@ class Game {
     playas.sort(comparePlayers); // Sort from best to worst
     return playas[0]; // The best player is now at index 0
   }
-
+  //Prints out all info
   print() {
     console.log("Players Info:", this.allPlayers);
     console.log("Community Cards: ",this.boardCards);
@@ -300,13 +297,16 @@ class Game {
 }
 
 function App() {
+  // **All Useful States**
   const [game, setGame] = useState(null);
-  const [gameNum, setGameNum] = useState(1);
-  const [round, setRound] = useState(1);
+  const [gameNum, setGameNum] = useState(1); //sets game number
+  const [round, setRound] = useState(1); //sets round number
   const [turn, setTurn] = useState(0); // First player after dealer, FIX THIS
-  const [time, toGo] = useState(0);
-  const [nextR, changeNextR] = useState(false);
-
+  const [time, toGo] = useState(0); //makes it so players are cycled after rounds
+  const [nextR, changeNextR] = useState(false); //un-disables round button after round 4/player cycling
+  
+  // **IMPORTANT FUNCTIONS FOR GAME HANDLING **
+  //Handles GameForm input, initializes new Game object, starts game
   function initializeValues(playerCt, smallAmt, largeAmt, money) {
     const newGame = new Game();
     newGame.start(playerCt, smallAmt, largeAmt, money);
@@ -316,6 +316,7 @@ function App() {
     setTurn(0)
     toGo(time+1)
   }
+  //Moves to Next Round, disables Round Button, decides next player to cycle
   function handleNextRound() {
     if (game) {
       game.nextRound();
@@ -328,7 +329,7 @@ function App() {
       toGo(time+1);
     }
   }
-
+  //Runs once 4 Rounds Conclude. Uses Game functions to reset everyone's hands/round #, starts game again.
   function handleNextGame() {
     if (game) {
       game.nextGame();
@@ -340,6 +341,9 @@ function App() {
       toGo(time+1);
     }
   }
+
+  //**TURNS AND AI FUNCTIONS - NEEDS FIXING FOR LATER**
+  //Handles player switching. FIX LATER! NEEDS TO START AFTER DEALER, AND NEEDS TO CYCLE AFTER BETS/RAISES!
   const nextTurn = () => {
     let i = 1;
     while (turn + i < game.allPlayers.length) {
@@ -349,9 +353,9 @@ function App() {
       }
       i += 1;
     }
-  changeNextR(true);
+    changeNextR(true);
   };
-
+  //Handles "AI" Moves (Random Choice between options)
   const aiMove = () => {
     setTimeout(() => {
       const actions = ["bet","call","check", "fold"]; //for now, until bet/call are implemented
@@ -363,34 +367,36 @@ function App() {
       nextTurn();
     }, 3000); 
   };
-
+  //Runs the aiMove() every time the turn switches/the round starts/the game starts till rounds end
   useEffect(() => {
     if (game && game.allPlayers[turn].id !== game.playerID && game.round !== 4) {
       aiMove();
     }
-  }, [turn, time]);
+  }, [turn, time]); //Any changes to turn or time vars will make the aiMove() run again.
 
-  function bet(){
+  // **ALL PLAYER/AI FUNCTIONS**
+  function bet(){ //MUST BE IMPLEMENTED!
     console.log("Player ",game.allPlayers[turn].id+1,"has 'bet'");
     nextTurn();
   }
-  function call(){
+  function call(){ //MUST BE IMPLEMENTED!
     console.log("Player ",game.allPlayers[turn].id+1,"has 'called'");
     nextTurn();
   }
-  function check(){
+  function check(){ //MUST BE IMPLEMENTED!
     console.log("Player ",game.allPlayers[turn].id+1,"has 'checked'");
     nextTurn();
   }
-  function fold(){
+  function fold(){ //Prints the player who folded, sets their .folded value to True
     console.log("Player ",game.allPlayers[turn].id+1,"has 'folded'");
-    game.allPlayers[turn].folded=true;
+    game.allPlayers[turn].folded=true; // This renders them unable to play/be selected, and adds a red border to show it.
     nextTurn();
   }
 
+  //**ALL CODE DISPLAYED (WILL BE CHANGED LATER, FOCUS ON GAME LOGIC FIRST)**
   return (
     <div className="App">
-      {/* Navbar */}
+      {/* Navbar - Will be Implemented in the FUTURE */}
       <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-3">
         <a className="navbar-brand fs-3 fw-bold" href="/">🃏</a>
         {/* 
