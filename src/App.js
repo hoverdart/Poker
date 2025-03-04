@@ -189,6 +189,11 @@ class Game {
   nextGame() { // essentially start of a new game; this should be run directly after "start" to get to the "preflop" stage
     this.game +=1;
     this.round = 1;
+    //Depositing money for the winnah
+    if (this.winner !== 0){
+      this.winner.playerMoney +=  this.pot;
+      this.pot = 0;
+    }
     this.deck = new Deck(); // Deck is reset
     this.deck.shuffle(); // Cards reshuffled
     this.boardCards = [] //Board Cards Set to NADA
@@ -321,8 +326,50 @@ function App() {
 
   return (
     <div className="App">
-      <GameForm onSubmit={initializeValues} />
-      {game && (<GameDisplay gameNum={gameNum} round={round} game={game} handleNextRound={handleNextRound} handleNextGame={handleNextGame} />)}
+      {/* Navbar */}
+      <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+        <a className="navbar-brand fs-3 fw-bold" href="/">🃏</a>
+        {/* 
+        <div className="collapse navbar-collapse">
+          <ul className="navbar-nav ms-auto">
+            <li className="nav-item">
+              <a className="nav-link" href="#">Home</a>
+            </li>
+            <li className="nav-item">
+              <a className="nav-link" href="#">How to Play</a>
+            </li>
+            <li className="nav-item">
+              <a className="nav-link" href="#">Leaderboard</a>
+            </li>
+            <li className="nav-item">
+              <a className="btn btn-outline-primary ms-3" href="#game-setup">Start Game</a>
+            </li>
+          </ul>
+        </div>
+        */}
+      </nav>
+
+      {/* Hero Section */}
+      <header className="bg-dark text-light text-center py-3">
+        <h1 className="display-3 fw-bold">Poker!</h1>
+        <p className="lead">The ultimate Texas Hold'em experience. Are you ready to go all in?</p>
+      </header>
+
+      {/* Game Setup Section */}
+      <section id="game-setup" className="container mt-5">
+        <div className="row justify-content-center">
+          <div className="col-md-6">
+            <GameForm onSubmit={initializeValues} />
+          </div>
+        </div>
+      </section>
+
+      {/* Game Display Section */}
+      <section className="container mt-4">
+        {game && (
+          <GameDisplay gameNum={gameNum} round={round} game={game} handleNextRound={handleNextRound} handleNextGame={handleNextGame}/>
+        )}
+      </section>
     </div>
   );
 }

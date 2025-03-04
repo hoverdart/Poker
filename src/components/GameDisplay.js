@@ -7,6 +7,7 @@ const GameDisplay = (props) => {
             <p><strong>Small Blind:</strong> ${props.game.small}</p>
             <p><strong>Big Blind:</strong> ${props.game.big}</p>
             <p><strong>Starting Money:</strong> ${props.game.startingMoney}</p>
+            <p><strong>Current Pot:</strong> ${props.game.pot}</p>
             <p><strong>Community Cards:</strong> 
             {props.game.boardCards.length > 0 ? props.game.boardCards.map((card, index) => ( <span key={index}> {card.name} {card.symbol}{index !== props.game.boardCards.length-1 && ", "} </span>)): " None"}
             </p>
@@ -28,7 +29,7 @@ const GameDisplay = (props) => {
                 <p><strong>Hand Type:</strong> {player.handType}</p>
                 {player.id === props.game.playerID && <button className="btn btn-primary mx-2">Check</button>}
                 {player.id === props.game.playerID && <button className="btn btn-warning mx-2">Call</button>}
-                {player.id === props.game.playerID && <button className="btn btn-success-emphasis mx-2">Raise</button>}
+                {player.id === props.game.playerID && <button className="btn btn-success mx-2">Raise</button>}
                 {player.id === props.game.playerID && <button className="btn btn-danger mx-2">Fold</button>}
               </div>
               ))}
