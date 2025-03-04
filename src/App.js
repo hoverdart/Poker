@@ -193,6 +193,7 @@ class Game {
     if (this.winner !== 0){
       this.winner.playerMoney +=  this.pot;
       this.pot = 0;
+      this.winner = 0;
     }
     this.deck = new Deck(); // Deck is reset
     this.deck.shuffle(); // Cards reshuffled
@@ -350,9 +351,9 @@ function App() {
       </nav>
 
       {/* Hero Section */}
-      <header className="bg-dark text-light text-center py-3">
+      <header className="bg-dark text-light text-center py-1">
         <h1 className="display-3 fw-bold">Poker!</h1>
-        <p className="lead">The ultimate Texas Hold'em experience. Are you ready to go all in?</p>
+        <p className="lead">The Ultimate Texas Hold'em experience. Are you ready to go all in?</p>
       </header>
 
       {/* Game Setup Section */}

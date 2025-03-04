@@ -3,12 +3,12 @@ import React from "react";
 const GameDisplay = (props) => {
   return (
     <div className="container mt-4 p-4 bg-light shadow-lg rounded">
-      <h3 className="mb-3">
+      <h2 className="mb-3">
         <strong>Game {props.gameNum}</strong>: Round {props.round}
-      </h3>
+      </h2>
 
       {/* Game Information Table */}
-      <table className="table table-bordered">
+      <table className="table table-sm table-bordered">
         <tbody>
           <tr>
             <td><strong>Players:</strong></td>
@@ -23,10 +23,6 @@ const GameDisplay = (props) => {
             <td>${props.game.big}</td>
           </tr>
           <tr>
-            <td><strong>Starting Money:</strong></td>
-            <td>${props.game.startingMoney}</td>
-          </tr>
-          <tr>
             <td><strong>Current Pot:</strong></td>
             <td>${props.game.pot}</td>
           </tr>
@@ -34,7 +30,7 @@ const GameDisplay = (props) => {
       </table>
 
       {/* Community Cards */}
-      <div className="mb-3">
+      <div className="mb-3 fs-3">
         <strong>Community Cards:</strong>{" "}
         {props.game.boardCards.length > 0 ? (
           props.game.boardCards.map((card, index) => (
@@ -50,8 +46,8 @@ const GameDisplay = (props) => {
       {/* Players Section */}
       <div className="row">
         {props.game.allPlayers.map((player) => (
-          <div key={player.id} className="col-md-6">
-            <div className="card mb-3 h-100">
+          <div key={player.id} className="col-md-6 my-2">
+            <div className={`card mb-3 h-100 ${props.game.winner.id === player.id ? "bg-body-secondary" : ""}`}>
               <div className="card-body">
                 <h5 className="card-title"><strong>Player {player.id + 1}</strong></h5>
                 {player.playerBlind && (
@@ -75,10 +71,10 @@ const GameDisplay = (props) => {
                 {/* Player Actions */}
                 {player.id === props.game.playerID && (
                   <div className="btn-group mt-2">
-                    <button className="btn btn-primary px-2 me-2">Check</button>
-                    <button className="btn btn-warning px-2 me-2">Call</button>
-                    <button className="btn btn-success px-2 me-2">Raise</button>
-                    <button className="btn btn-danger px-2 me-2">Fold</button>
+                    <button className="btn btn-primary btn-sm px-2 me-2">Check</button>
+                    <button className="btn btn-warning btn-sm px-2 me-2">Call</button>
+                    <button className="btn btn-success btn-sm px-2 me-2">Raise</button>
+                    <button className="btn btn-danger btn-sm px-2 me-2">Fold</button>
                   </div>
                 )}
               </div>
@@ -89,7 +85,7 @@ const GameDisplay = (props) => {
 
       {/* Game Control Buttons */}
       {props.game.round === 4 ? (
-        <p className="mt-3"><strong>Player {props.game.winner.id + 1} Wins!</strong></p>
+        <p className="mt-3 fs-3"><strong>Player {props.game.winner.id + 1} Wins!</strong></p>
       ) : null}
 
       <button
