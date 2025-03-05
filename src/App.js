@@ -163,7 +163,7 @@ class Game {
     this.boardCards = [];
     this.winner=0;
     this.playerID=0;
-    this.playerMoneyIn = 0;
+    this.currentBet=0;
   }
   //Initializes game by setting values
   start(players, small, big, startingMoney) {
@@ -195,6 +195,7 @@ class Game {
     this.deck = new Deck(); // Deck is reset
     this.deck.shuffle(); // Cards reshuffled
     this.boardCards = [] //Board Cards Set to NADA
+    this.currentBet=this.big;
 
     for (let i = 0; i < this.players; i++) { // Player's decks are remade
       this.allPlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
@@ -234,15 +235,21 @@ class Game {
     }
     this.print()
   }
-  //Moves on round, creates community cards, gets the winner
+  //Moves on round, creates community cards, gets the winner, resets current bet/money In if round isn't first round
   nextRound() {
     this.round+=1;
+    if(this.round === 1){
+      this.currentBet=this.big;
+    }else{
+      this.currentBet=0;
+    }
     if (this.round === 2) { // adding cards to community cards
       this.boardCards = this.deck.fullDeck.splice(0, 3);
 
       for (var i=0; i<this.allPlayers.length; i++){
         this.allPlayers[i].createHand(this.boardCards);
         this.allPlayers[i].type();
+        this.allPlayers[i].moneyIn=0;
       }
     }else if(this.round === 3 || this.round === 4){
       this.boardCards.push(this.deck.fullDeck.splice(0, 1)[0]);
@@ -281,17 +288,17 @@ class Game {
             let suitA = suitRank[playerA.fullHand[i].suit];
             let suitB = suitRank[playerB.fullHand[i].suit];
             if (suitA !== suitB) {
-                return suitB - suitA; // Higher suit wins
+                return suitB - suitA;
             }
         }
-        return 0; // Completely tied
+        return 0; 
     }
-    let playas = []; // Copy players list
+    let playas = []; 
     for (let i=0; i<this.allPlayers.length; i++){
       if (!this.allPlayers[i].folded) playas.push(this.allPlayers[i]);
     }
-    playas.sort(comparePlayers); // Sort from best to worst
-    return playas[0]; // The best player is now at index 0
+    playas.sort(comparePlayers); 
+    return playas[0];
   }
   //Prints out all info
   print() {
@@ -354,7 +361,7 @@ function App() {
     while (turn + i < game.allPlayers.length) {
       if (!game.allPlayers[turn + i].folded) {
         setTurn(turn + i);
-        return; // Exit function so changeNextR doesn't run
+        return; 
       }
       i += 1;
     }
@@ -363,13 +370,16 @@ function App() {
   //Handles "AI" Moves (Random Choice between options)
   const aiMove = () => {
     setTimeout(() => {
-      const actions = ["bet","call","check", "fold"]; //for now, until bet/call are implemented
+      let actions = ["raise","call", "fold", "check"]; 
+      if(game.currentBet !== 0){
+        actions.pop();
+      }
       const randomAction = actions[Math.floor(Math.random() * actions.length)];
-      if (randomAction === "bet") bet();
+      if (randomAction === "raise") raise();
       if (randomAction === "call") call();
       if (randomAction === "check") check();
       if (randomAction === "fold") fold();
-      nextTurn();
+      if(randomAction !== "raise") nextTurn(); //Now, the next turn will actually be from raise.
     }, 3000); 
   };
   //Runs the aiMove() every time the turn switches/the round starts/the game starts till rounds end
@@ -380,23 +390,47 @@ function App() {
   }, [turn, time]); //Any changes to turn or time vars will make the aiMove() run again.
 
   // **ALL PLAYER/AI FUNCTIONS**
-  function bet(){ //MUST BE IMPLEMENTED!
-    console.log("Player ",game.allPlayers[turn].id+1,"has 'bet'");
-    nextTurn();
-  }
-  function call(){ //MUST BE IMPLEMENTED!
-    console.log("Player ",game.allPlayers[turn].id+1,"has 'called'");
-    for(let i=0; i<game.allPlayers.length; i++){
-      if(game.allPlayers[i].id===game.playerID){
-        for(let x = i-1; x>=0; x--){
-          if(game.allPlayers[i].folded === false){
-            game.pot += game.allPlayers[x].moneyIn - game.allPlayers[turn].moneyIn;
-            game.allPlayers[turn].moneyIn += game.allPlayers[x].moneyIn - game.allPlayers[turn].moneyIn;
-            break;
-          }
-        }
-      }
+  function raise(){ //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
+    console.log("Player ",game.allPlayers[turn].id+1,"has 'raised'");
+    let betAmount = game.big; //This will be CHANGED in the future!! so u can enter ur own moolah!
+    if(game.allPlayers[turn].playerMoney < betAmount){
+      console.log("Player",game.allPlayers[turn].id+1," doesn't have enough money to bet.")
+    }else{
+      game.currentBet += betAmount;
+      game.allPlayers[turn].playerMoney-=betAmount;
+      game.allPlayers[turn].moneyIn += betAmount;
     }
+
+    //For now, I'm gonna RESET THE TURNS BACK TO 0, so people have to either bet or call or fold.
+    for(let i=0; i<game.allPlayers.length; i++){
+      if(!game.allPlayers[i].folded && game.allPlayers[turn].id !== game.allPlayers[i].id){ setTurn(i); break;}
+    }
+    //nextTurn();
+  }
+  function call() { 
+    console.log("Player", game.allPlayers[turn].id + 1, "has 'called'");
+    // Find highest bet
+    let highestBet = 0;
+    for (let player of game.allPlayers) {
+        if (!player.folded) {
+            highestBet = Math.max(highestBet, player.moneyIn);
+        }
+    }
+    let player = game.allPlayers[turn];
+    // Ensure the calling player matches the highest bet
+    let callAmount = highestBet - player.moneyIn;
+    if (callAmount > 0) {
+        if (player.playerMoney >= callAmount) {
+            player.playerMoney -= callAmount;
+            player.moneyIn += callAmount;
+            game.pot += callAmount;
+        } else {
+            console.log("Player", player.id + 1, "does not have enough money to call.");
+        }
+    } else {
+        console.log("Player", player.id + 1, "is already at the highest bet.");
+    }
+    game.currentBet = highestBet;
     nextTurn();
   }
   function check(){ //MUST BE IMPLEMENTED!
@@ -453,7 +487,7 @@ function App() {
       {/* Game Display Section */}
       <section className="container mt-4">
         {game && (
-          <GameDisplay gameNum={gameNum} round={round} game={game} handleNextRound={handleNextRound} handleNextGame={handleNextGame} turn={turn} check={check} fold={fold} raise={bet} call={call} nextR={nextR}/>
+          <GameDisplay gameNum={gameNum} round={round} game={game} handleNextRound={handleNextRound} handleNextGame={handleNextGame} turn={turn} check={check} fold={fold} raise={raise} call={call} nextR={nextR}/>
         )}
       </section>
     </div>

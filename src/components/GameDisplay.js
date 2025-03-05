@@ -26,25 +26,23 @@ const GameDisplay = (props) => {
             <td><strong>Current Pot:</strong></td>
             <td>${props.game.pot}</td>
           </tr>
-
-          <tr>
-            <td><strong>Current Turn:</strong></td>
-            <td>{props.game.allPlayers[props.turn].id + 1}</td>
-          </tr>
         </tbody>
         
       </table>
 
-      {/* Community Cards */}
+      {/* Community Cards and Current Bet */}
       <div className="mb-3 fs-3">
         <strong>Community Cards:</strong>{" "}
         {props.game.boardCards.length > 0 ? (
           props.game.boardCards.map((card, index) => (
             <span key={index} className={`badge mx-1 ${card.symbol === "♦" || card.symbol === "♥" ? "bg-danger" : "bg-secondary"}`}>
               {card.name} {card.symbol}
-            </span>))) : (<span className="text-muted">None</span>)}
+            </span>))) : (<span className="text-muted">None</span>)}    
       </div>
 
+      <div className="mb-3 fs-4">
+        <span><strong>Current Bet: $<span className="text-success">{props.game.currentBet} </span></strong></span>
+      </div>
       {/* Players Section */}
       <div className="row">
         {props.game.allPlayers.map((player) => (
@@ -67,7 +65,7 @@ const GameDisplay = (props) => {
                 {/* Player Actions - Disabled when not their turn/is round 4/time for next round*/}
                 {player.id === props.game.playerID && (
                   <div className="btn-group mt-2">
-                    <button className={`btn btn-primary btn-sm px-2 me-2 ${(player.id !== props.game.allPlayers[props.turn].id || props.round === 4 || props.nextR) &&  "disabled"}`} onClick={props.check}>Check</button>
+                    <button className={`btn btn-primary btn-sm px-2 me-2 ${(player.id !== props.game.allPlayers[props.turn].id || props.round === 4 || props.nextR || props.game.currentBet !== 0) &&  "disabled"}`} onClick={props.check}>Check</button>
                     <button className={`btn btn-warning btn-sm px-2 me-2 ${(player.id !== props.game.allPlayers[props.turn].id || props.round === 4 || props.nextR) && "disabled"}`} onClick={props.call}>Call</button>
                     <button className={`btn btn-success btn-sm px-2 me-2 ${(player.id !== props.game.allPlayers[props.turn].id || props.round === 4 || props.nextR) && "disabled"}`} onClick={props.raise}>Raise</button>
                     <button className={`btn btn-danger btn-sm px-2 me-2 ${(player.id !== props.game.allPlayers[props.turn].id || props.round === 4 || props.nextR) && "disabled"}`} onClick={props.fold}>Fold</button>
