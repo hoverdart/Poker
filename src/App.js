@@ -384,7 +384,7 @@ function App() {
   const aiMove = () => {
     setTimeout(() => {
       let actions = ["raise","call", "fold", "check"]; 
-      if(game.currentBet !== 0)actions[3] = "call";
+      if(game.currentBet !== 0) actions[3] = "call";
       else actions[1] = "check";
       const randomAction = actions[Math.floor(Math.random() * actions.length)];
       if (randomAction === "raise") raise();
