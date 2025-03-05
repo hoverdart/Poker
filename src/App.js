@@ -45,6 +45,7 @@ class Player {
     this.fullHand=[];
     this.handType = "N/A";
     this.folded=false;
+    this.moneyIn = 0;
   }
   //creates "full hand" w/ community cards
   createHand(communityCards){ 
@@ -162,6 +163,7 @@ class Game {
     this.boardCards = [];
     this.winner=0;
     this.playerID=0;
+    this.playerMoneyIn = 0;
   }
   //Initializes game by setting values
   start(players, small, big, startingMoney) {
@@ -217,12 +219,15 @@ class Game {
     for (let i = 0; i < this.allPlayers.length; i++) { //The pot is set 
       if (this.allPlayers[i].playerBlind === "small") {
         this.allPlayers[i].playerMoney -= this.small;
+          this.allPlayers[i].moneyIn += this.small;
         this.pot += this.small;
         if (i === this.allPlayers.length - 1) {
           this.allPlayers[0].playerMoney -= this.big;
+          this.allPlayers[0].moneyIn += this.big;
           this.pot += this.big;
         } else {
           this.allPlayers[i + 1].playerMoney -= this.big;
+          this.allPlayers[i+1].moneyIn += this.big;
           this.pot += this.big;
         }
       }
@@ -381,6 +386,17 @@ function App() {
   }
   function call(){ //MUST BE IMPLEMENTED!
     console.log("Player ",game.allPlayers[turn].id+1,"has 'called'");
+    for(let i=0; i<game.allPlayers.length; i++){
+      if(game.allPlayers[i].id===game.playerID){
+        for(let x = i-1; x>=0; x--){
+          if(game.allPlayers[i].folded === false){
+            game.pot += game.allPlayers[x].moneyIn - game.allPlayers[turn].moneyIn;
+            game.allPlayers[turn].moneyIn += game.allPlayers[x].moneyIn - game.allPlayers[turn].moneyIn;
+            break;
+          }
+        }
+      }
+    }
     nextTurn();
   }
   function check(){ //MUST BE IMPLEMENTED!

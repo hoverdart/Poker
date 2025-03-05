@@ -11,7 +11,7 @@ Play with state-of-the-art AI systems (random choice) that'll keep you challenge
 
  [Waris 🕋](https://github.com/DarkRiderii)
 
- [Bedi Boy 👦🏻](https://github.com/Arjinoodles)
+ [Bedi Boy 🛏️](https://github.com/Arjinoodles)
 
- [Varma 👦🏿](https://www.shauryav.com)
+ [Varma 🤓](https://www.shauryav.com)
 
