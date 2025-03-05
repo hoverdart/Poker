@@ -47,7 +47,7 @@ const GameDisplay = (props) => {
       <div className="row">
         {props.game.allPlayers.map((player) => (
           <div key={player.id} className="col-md-6 my-2">
-            <div className={`card mb-3 h-100 ${props.game.winner.id === player.id ? "bg-body-secondary" : player.folded && " border border-danger"} ${player.id === props.game.allPlayers[props.turn].id && props.game.round !== 4 && !props.nextR ? "border border-primary" : ""}`}>
+            <div className={`card mb-3 h-100 ${props.game.winner.id === player.id ? "bg-body-secondary" : player.id === props.game.allPlayers[props.turn].id && props.game.round !== 4 && !props.nextR ? "border border-5 border-primary" : player.folded ? " border border-3 border-danger" : player.turn==="raise" ? "border border-3 border-success" : player.turn === "call" && "border border-3 border-warning"}`}>
               <div className="card-body">
                 <h5 className="card-title"><strong>Player {player.id + 1}</strong></h5>
                 {player.playerBlind && (<p className="card-text"><strong>Blind:</strong> {player.playerBlind}</p>)}

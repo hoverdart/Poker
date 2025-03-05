@@ -46,6 +46,7 @@ class Player {
     this.handType = "N/A";
     this.folded=false;
     this.moneyIn = 0;
+    this.turn="";
   }
   //creates "full hand" w/ community cards
   createHand(communityCards){ 
@@ -197,16 +198,17 @@ class Game {
     this.boardCards = [] //Board Cards Set to NADA
     this.currentBet=this.big;
 
-    for (let i = 0; i < this.players; i++) { // Player's decks are remade
+    for (let i = 0; i < this.players; i++) { // Player's decks are remade, resets everything
       this.allPlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
       this.allPlayers[i].handType="N/A";
       this.allPlayers[i].folded=false;
       this.allPlayers[i].moneyIn = 0;
+      this.allPlayers[i].turn = "";
     }
     for (let i = 0; i < this.allPlayers.length; i++) { // Moving the small/big blinds up
       if (this.allPlayers[i].playerBlind === "big"){
         for (let i=0;i<this.allPlayers.length;i++){
-          this.allPlayers[i].playerBlind=""
+          this.allPlayers[i].playerBlind="";
         }
         this.allPlayers[i].playerBlind = "small";
         if (i+1 === this.allPlayers.length){
@@ -251,6 +253,7 @@ class Game {
         this.allPlayers[i].createHand(this.boardCards);
         this.allPlayers[i].type();
         this.allPlayers[i].moneyIn=0;
+        this.allPlayers[i].turn = "";
       }
     }else if(this.round === 3 || this.round === 4){
       this.boardCards.push(this.deck.fullDeck.splice(0, 1)[0]);
@@ -259,6 +262,7 @@ class Game {
         this.allPlayers[i].createHand(this.boardCards);
         this.allPlayers[i].type();
         this.allPlayers[i].moneyIn=0;
+        this.allPlayers[i].turn = "";
       }
       if (this.round === 4){
         this.winner = this.determineRanking();
@@ -392,6 +396,7 @@ function App() {
   // **ALL PLAYER/AI FUNCTIONS**
   function raise(){ //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
     console.log("Player ",game.allPlayers[turn].id+1,"has 'raised'");
+    game.allPlayers[turn].turn="raise";
     let betAmount = game.currentBet + game.big; 
     if (game.allPlayers[turn].playerMoney < betAmount) {
         console.log("Player", game.allPlayers[turn].id+1, "doesn't have enough money to raise.");
@@ -409,6 +414,7 @@ function App() {
   }
   function call() { 
     console.log("Player", game.allPlayers[turn].id + 1, "has 'called'");
+    game.allPlayers[turn].turn="call";
     // Find highest bet
     let highestBet = 0;
     for (let player of game.allPlayers) {
@@ -436,6 +442,7 @@ function App() {
   }
   function check(){ //MUST BE IMPLEMENTED!
     console.log("Player ",game.allPlayers[turn].id+1,"has 'checked'");
+    game.allPlayers[turn].turn="check";
     nextTurn();
   }
   function fold(){ //Prints the player who folded, sets their .folded value to True, CHECKS IF OTHER PPL FOLDED TOO 
