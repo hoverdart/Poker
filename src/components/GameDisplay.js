@@ -22,10 +22,6 @@ const GameDisplay = (props) => {
             <td><strong>Big Blind:</strong></td>
             <td>${props.game.big}</td>
           </tr>
-          <tr>
-            <td><strong>Current Pot:</strong></td>
-            <td>${props.game.pot}</td>
-          </tr>
         </tbody>
         
       </table>
@@ -41,17 +37,17 @@ const GameDisplay = (props) => {
       </div>
 
       <div className="mb-3 fs-4">
-        <span><strong>Current Bet: $<span className="text-success">{props.game.currentBet} </span></strong></span>
+        <span><strong>Current Pot: <span className="text-success">${props.game.pot} </span></strong></span>    <span><strong>| Current Bet: <span className="text-success">${props.game.currentBet} </span></strong></span>
       </div>
       {/* Players Section */}
       <div className="row">
         {props.game.allPlayers.map((player) => (
           <div key={player.id} className="col-md-6 my-2">
-            <div className={`card mb-3 h-100 ${props.game.winner.id === player.id ? "bg-body-secondary" : player.id === props.game.allPlayers[props.turn].id && props.game.round !== 4 && !props.nextR ? "border border-5 border-primary" : player.folded ? " border border-3 border-danger" : player.turn==="raise" ? "border border-3 border-success" : player.turn === "call" && "border border-3 border-warning"}`}>
+            <div className={`card mb-3 h-100 ${props.game.winner.id === player.id ? "bg-body-secondary" : player.id === props.game.allPlayers[props.turn].id && props.game.round !== 4 && !props.nextR ? "border border-5 border-primary" : (player.folded || player.isSpectating) ? " border border-3 border-danger" : player.turn==="raise" ? "border border-3 border-success" : player.turn === "call" && "border border-3 border-warning"}`} style={player.isSpectating && {backgroundColor:"#dbafaf"}}>
               <div className="card-body">
-                <h5 className="card-title"><strong>Player {player.id + 1}</strong></h5>
+                <h5 className="card-title"><strong>Player {player.id + 1} {player.id === props.game.playerID && "You"}</strong></h5>
                 <p className="card-text"><strong>Money:</strong> ${player.playerMoney}</p>
-                <p className="card-text"><strong>Money In:</strong> {player.moneyIn}</p>
+                <p className="card-text"><strong>Money In:</strong> ${player.moneyIn}</p>
                 <p className="card-text">
                   <strong>Hand:</strong>{" "}
                   {player.playerHand.map((card, index) => (

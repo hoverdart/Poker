@@ -47,6 +47,7 @@ class Player {
     this.folded=false;
     this.moneyIn = 0;
     this.turn="";
+    this.isSpectating = false;
   }
   //creates "full hand" w/ community cards
   createHand(communityCards){ 
@@ -236,6 +237,14 @@ class Game {
         }
       }
     }
+
+    //Check if player's money is negative because of the small and/or large blind. If it is, they are spectators instead
+    this.allPlayers.forEach((player)=>{
+      if(player.playerMoney <= 0){
+        player.isSpectating=true; // Right now, I'm simply making it a UI change. 
+        //WARIS will have to implement what actually happesn in the game (as in, their turn gets skipped forever or something)
+      }// WARIS also has to make someone else pay the small/large blinds, depending on what this specific person has paid.
+    })
     this.print()
   }
   //Moves on round, creates community cards, gets the winner, resets current bet/money In if round isn't first round
@@ -375,9 +384,8 @@ function App() {
   const aiMove = () => {
     setTimeout(() => {
       let actions = ["raise","call", "fold", "check"]; 
-      if(game.currentBet !== 0){
-        actions.pop();
-      }
+      if(game.currentBet !== 0)actions[3] = "call";
+      else actions[1] = "check";
       const randomAction = actions[Math.floor(Math.random() * actions.length)];
       if (randomAction === "raise") raise();
       if (randomAction === "call") call();
@@ -395,25 +403,32 @@ function App() {
 
   // **ALL PLAYER/AI FUNCTIONS**
   function raise(){ //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
+
     console.log("Player ",game.allPlayers[turn].id+1,"has 'raised'");
     game.allPlayers[turn].turn="raise";
     let betAmount = game.currentBet + game.big; 
     if (game.allPlayers[turn].playerMoney < betAmount) {
-        console.log("Player", game.allPlayers[turn].id+1, "doesn't have enough money to raise.");
-        fold();
-    }
+        console.log("Player", game.allPlayers[turn].id+1, "doesn't have enough money to raise. will CALL instead.");
+        call();
+    }else{
     game.allPlayers[turn].playerMoney -= (betAmount - game.allPlayers[turn].moneyIn);
     game.pot += betAmount - game.allPlayers[turn].moneyIn;
     game.allPlayers[turn].moneyIn = betAmount;
     game.currentBet = betAmount;
 
-    //For now, I'm gonna RESET THE TURNS BACK TO 0, so people have to either bet or call or fold.
+    //For now, I'm gonna RESET THE TURNS BACK TO 0, so people have to either bet or call or fold. MR WARIS MUST FIX!
     for(let i=0; i<game.allPlayers.length; i++){
       if(!game.allPlayers[i].folded && game.allPlayers[turn].id !== game.allPlayers[i].id){ setTurn(i); break;}
     }
     //nextTurn();
-  }
+  }}
   function call() { 
+    //Check if they have enough money
+    if(game.allPlayers[turn].playerMoney - (game.currentBet - game.allPlayers[turn].moneyIn) < 0){
+      console.log("Already Folded")
+       fold();
+    }else{
+
     console.log("Player", game.allPlayers[turn].id + 1, "has 'called'");
     game.allPlayers[turn].turn="call";
     // Find highest bet
@@ -440,6 +455,7 @@ function App() {
     }
     game.currentBet = highestBet;
     nextTurn();
+  }
   }
   function check(){ //MUST BE IMPLEMENTED!
     console.log("Player ",game.allPlayers[turn].id+1,"has 'checked'");
