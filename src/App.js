@@ -201,6 +201,7 @@ class Game {
       this.allPlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
       this.allPlayers[i].handType="N/A";
       this.allPlayers[i].folded=false;
+      this.allPlayers[i].moneyIn = 0;
     }
     for (let i = 0; i < this.allPlayers.length; i++) { // Moving the small/big blinds up
       if (this.allPlayers[i].playerBlind === "big"){
@@ -257,11 +258,10 @@ class Game {
       for (let i=0; i<this.allPlayers.length; i++){
         this.allPlayers[i].createHand(this.boardCards);
         this.allPlayers[i].type();
+        this.allPlayers[i].moneyIn=0;
       }
       if (this.round === 4){
         this.winner = this.determineRanking();
-        console.log("THIS IS THE WINNER: ")
-        console.log(this.winner);
       }
     }
     this.print()
@@ -392,14 +392,14 @@ function App() {
   // **ALL PLAYER/AI FUNCTIONS**
   function raise(){ //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
     console.log("Player ",game.allPlayers[turn].id+1,"has 'raised'");
-    let betAmount = game.big; //This will be CHANGED in the future!! so u can enter ur own moolah!
-    if(game.allPlayers[turn].playerMoney < betAmount){
-      console.log("Player",game.allPlayers[turn].id+1," doesn't have enough money to bet.")
-    }else{
-      game.currentBet += betAmount;
-      game.allPlayers[turn].playerMoney-=betAmount;
-      game.allPlayers[turn].moneyIn += betAmount;
+    let betAmount = game.currentBet + game.big; 
+    if (game.allPlayers[turn].playerMoney < betAmount) {
+        console.log("Player", game.allPlayers[turn].id+1, "doesn't have enough money to raise.");
+        fold();
     }
+    game.allPlayers[turn].playerMoney -= (betAmount - game.allPlayers[turn].moneyIn);
+    game.allPlayers[turn].moneyIn = betAmount;
+    game.currentBet = betAmount;
 
     //For now, I'm gonna RESET THE TURNS BACK TO 0, so people have to either bet or call or fold.
     for(let i=0; i<game.allPlayers.length; i++){
@@ -426,6 +426,7 @@ function App() {
             game.pot += callAmount;
         } else {
             console.log("Player", player.id + 1, "does not have enough money to call.");
+            fold();
         }
     } else {
         console.log("Player", player.id + 1, "is already at the highest bet.");
@@ -437,10 +438,20 @@ function App() {
     console.log("Player ",game.allPlayers[turn].id+1,"has 'checked'");
     nextTurn();
   }
-  function fold(){ //Prints the player who folded, sets their .folded value to True
+  function fold(){ //Prints the player who folded, sets their .folded value to True, CHECKS IF OTHER PPL FOLDED TOO 
     console.log("Player ",game.allPlayers[turn].id+1,"has 'folded'");
     game.allPlayers[turn].folded=true; // This renders them unable to play/be selected, and adds a red border to show it.
-    nextTurn();
+
+    //CHECKING IF OTHER PPL FOLDED
+    const activePlayers = game.allPlayers.filter(player => !player.folded);
+    if (activePlayers.length === 1) {
+        game.winner = activePlayers[0];
+        game.round = 4; 
+        setRound(game.round)
+        console.log(`Player ${game.winner.id+1} wins because every other idiot folded!`);
+    }else{
+      nextTurn();
+    }
   }
 
   //**ALL CODE DISPLAYED (WILL BE CHANGED LATER, FOCUS ON GAME LOGIC FIRST)**
