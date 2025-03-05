@@ -403,6 +403,7 @@ function App() {
         fold();
     }
     game.allPlayers[turn].playerMoney -= (betAmount - game.allPlayers[turn].moneyIn);
+    game.pot += betAmount - game.allPlayers[turn].moneyIn;
     game.allPlayers[turn].moneyIn = betAmount;
     game.currentBet = betAmount;
 
