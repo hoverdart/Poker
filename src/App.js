@@ -150,7 +150,13 @@ class Player {
     this.handType = bestHandType;
   }
 }
+class Bot extends Player{
+  constructor(botID) {
+    this.botID=botID; //Assign a different ID to the bot than the player to prevent interference with turns
+  }
 
+
+}
 class Game {
   constructor() {
     this.players = 0;
@@ -313,11 +319,13 @@ class Game {
     playas.sort(comparePlayers); 
     return playas[0];
   }
+
   //Prints out all info
   print() {
     console.log("Players Info:", this.allPlayers);
     console.log("Community Cards: ",this.boardCards);
     console.log("Pot: ",this.pot);
+  
   }
 }
 
