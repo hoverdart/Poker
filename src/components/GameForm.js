@@ -28,8 +28,8 @@ const GameForm = (props) => {
                         <span className="input-group-text">$</span>
                         <input type="number" className="form-control" id="smallBlind" placeholder="Enter amount" value={smallAmt} onChange={(e)=> {setSmall(e.target.valueAsNumber)}}/>
                     </div>
-                    {smallAmt <= 0 && <div className="text-danger">Must be greater than $0.</div>}
-                    {largeAmt < smallAmt && <div className="text-danger">Small Blind Must Be Smaller than the Large Blind.</div>}
+                    {smallAmt <= 0 && <div className="text-danger fw-bold">⚠ Must be greater than $0.</div>}
+                    {largeAmt < smallAmt && <div className="text-danger fw-bold">⚠ Small Blind Must Be Smaller than the Large Blind.</div>}
                 </div>
             
                 <div className="col mb-2">
@@ -38,8 +38,8 @@ const GameForm = (props) => {
                         <span className="input-group-text">$</span>
                         <input type="number" className="form-control" id="largeBlind" placeholder="Enter amount" value={largeAmt} onChange={(e)=> {setLarge(e.target.valueAsNumber)}} />
                     </div>
-                    {largeAmt <= 0 && <div className="text-danger">Must be greater than $0.</div>}
-                    {largeAmt < smallAmt && <div className="text-danger">Large Blind Must Be Larger than the Small Blind.</div>}
+                    {largeAmt <= 0 && <div className="text-danger">⚠ Must be greater than $0.</div>}
+                    {largeAmt < smallAmt && <div className="text-danger">⚠ Large Blind Must Be Larger than the Small Blind.</div>}
                 </div>
 
                 <div className="col mb-2">
@@ -48,7 +48,7 @@ const GameForm = (props) => {
                         <span className="input-group-text">$</span>
                         <input type="number" className="form-control" id="startingMoney" placeholder="Enter amount" value={money} onChange={(e)=> {setMoney(e.target.valueAsNumber)}}/>
                     </div>
-                    {money <= 0 && <div className="text-danger">Must be greater than $0.</div>}
+                    {money <= 0 && <div className="text-danger fw-bold">⚠ Must be greater than $0.</div>}
                 </div>
             </div>
 

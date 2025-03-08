@@ -448,11 +448,12 @@ function App() {
   }, [turn, time]); //Any changes to turn or time vars will make the aiMove() run again.
 
   // **ALL PLAYER/AI FUNCTIONS**
-  function raise(){ //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
+  function raise(money=game.big){ //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
 
     console.log("Player ",game.activePlayers[turn].id+1,"has 'raised'");
     game.activePlayers[turn].turn="raise";
-    let betAmount = game.currentBet + game.big; 
+    if(game.activePlayers[turn] !== game.playerID) money=Math.floor(Math.random()*money+1);
+    let betAmount = game.currentBet + money; 
     if (game.activePlayers[turn].playerMoney < betAmount) {
         console.log("Player", game.activePlayers[turn].id+1, "doesn't have enough money to raise. will CALL instead.");
         call();
@@ -568,7 +569,9 @@ function App() {
       {/* Game Display Section */}
       <section className="container mt-4">
         {game && (
+          <>
           <GameDisplay gameNum={gameNum} round={round} game={game} handleNextRound={handleNextRound} handleNextGame={handleNextGame} turn={turn} check={check} fold={fold} raise={raise} call={call} nextR={nextR}/>
+          </>
         )}
       </section>
     </div>
