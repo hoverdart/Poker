@@ -314,26 +314,26 @@ class Game {
   determineRanking() {
     function comparePlayers(playerA, playerB) {
         let handRanking = ["high card", "pair", "two pair", "three of a kind", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"];
-        // Get numerical rank of hand type
+        // First Test: Compare Hand Types
         let rankA = handRanking.indexOf(playerA.handType);
         let rankB = handRanking.indexOf(playerB.handType);
-        if (rankA !== rankB) {
-            return rankB - rankA; // Reverse order so highest rank is first
+        if (rankA !== rankB) return rankB - rankA; // Reverse order so highest rank is first
+        //Second Test: Compare Highest Valued Card
+        let maxValA = Math.max((playerA.playerHand[0].value === 1 ? 14 : playerA.playerHand[0].value), (playerA.playerHand[1].value === 1 ? 14 : playerA.playerHand[1].value)); 
+        let maxValB = Math.max((playerB.playerHand[0].value === 1 ? 14 : playerB.playerHand[0].value), (playerB.playerHand[1].value === 1 ? 14 : playerB.playerHand[1].value)); 
+        if(maxValA !== maxValB) return maxValB - maxValA;
+        // Third Test: Compare Suits(spades > hearts > diamonds > clubs)
+        const suitRank = { clubs: 1, diamonds: 2, hearts: 3, spades: 4 };
+        if(playerA.playerHand[0].value > playerA.playerHand[1].value){ maxValA = suitRank[playerA.playerHand[0].suit];}else{ maxValA = suitRank[playerA.playerHand[1].suit];}
+        if(playerB.playerHand[0].value > playerB.playerHand[1].value){ maxValB = suitRank[playerB.playerHand[0].suit];}else{ maxValB = suitRank[playerB.playerHand[1].suit];}
+        if (maxValA !== maxValB) {
+          return maxValB - maxValA;
         }
-        // Sum the card values, treating Aces properly
-        let valueA = playerA.fullHand.reduce((sum, card) => sum + (card.value === 1 ? 11 : card.value), 0);
-        let valueB = playerB.fullHand.reduce((sum, card) => sum + (card.value === 1 ? 11 : card.value), 0);
+        //FINAL Test: Sum Total Card Values
+        let valueA = playerA.fullHand.reduce((sum, card) => sum + (card.value === 1 ? 14 : card.value), 0);
+        let valueB = playerB.fullHand.reduce((sum, card) => sum + (card.value === 1 ? 14 : card.value), 0);
         if (valueA !== valueB) {
             return valueB - valueA; // Higher card sum wins
-        }
-        // Suit ranking for tiebreakers (spades > hearts > diamonds > clubs)
-        const suitRank = { clubs: 1, diamonds: 2, hearts: 3, spades: 4 };
-        for (let i = 0; i < playerA.fullHand.length; i++) {
-            let suitA = suitRank[playerA.fullHand[i].suit];
-            let suitB = suitRank[playerB.fullHand[i].suit];
-            if (suitA !== suitB) {
-                return suitB - suitA;
-            }
         }
         return 0; 
     }
@@ -438,7 +438,7 @@ function App() {
       if (randomAction === "check") check();
       if (randomAction === "fold") fold();
       if(randomAction !== "raise") nextTurn(); //Now, the next turn will actually be from raise.
-    }, 500); 
+    }, 1000); 
   };
   //Runs the aiMove() every time the turn switches/the round starts/the game starts till rounds end
   useEffect(() => {
