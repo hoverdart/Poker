@@ -172,6 +172,8 @@ class Game {
     this.winner=0;
     this.playerID=0;
     this.currentBet=0;
+    this.spectatingPlayers = [];
+    this.activePlayers = [];
   }
   //Initializes game by setting values
   start(players, small, big, startingMoney) {
@@ -194,6 +196,8 @@ class Game {
   nextGame() { // Essentially start of a new game, resetting values
     this.game +=1;
     this.round = 1;
+    this.spectatingPlayers = [];
+    this.activePlayers = [];
     //Depositing money for the winnah
     if (this.winner !== 0){
       this.winner.playerMoney +=  this.pot;
@@ -205,52 +209,73 @@ class Game {
     this.boardCards = [] //Board Cards Set to NADA
     this.currentBet=this.big;
 
-    for (let i = 0; i < this.players; i++) { // Player's decks are remade, resets everything
-      this.allPlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
-      this.allPlayers[i].handType="N/A";
-      this.allPlayers[i].folded=false;
-      this.allPlayers[i].moneyIn = 0;
-      this.allPlayers[i].turn = "";
+    for (let i = 0; i < this.allPlayers.length; i++) {
+      if(this.allPlayers[i].playerMoney <= 0){
+        this.allPlayers[i].isSpectating = true;
+      }
     }
-    for (let i = 0; i < this.allPlayers.length; i++) { // Moving the small/big blinds up
-      if (this.allPlayers[i].playerBlind === "big"){
-        for (let i=0;i<this.allPlayers.length;i++){
-          this.allPlayers[i].playerBlind="";
+
+    for(let i=0; i<this.allPlayers.length; i++){
+      if(this.allPlayers[i].isSpectating===true){
+        this.spectatingPlayers.push(this.allPlayers[i]);
+      }
+      else{
+        this.activePlayers.push(this.allPlayers[i]);
+      }
+    }
+
+    for (let i = 0; i < this.activePlayers.length; i++) { // Player's decks are remade, resets everything, moves small/big blinds up
+      this.activePlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
+      this.activePlayers[i].handType="N/A";
+      this.activePlayers[i].folded=false;
+      this.activePlayers[i].moneyIn = 0;
+      this.activePlayers[i].turn = "";
+
+      if (this.activePlayers[i].playerBlind === "big"){
+        for (let i=0; i<this.activePlayers.length;i++){
+          this.activePlayers[i].playerBlind="";
         }
-        this.allPlayers[i].playerBlind = "small";
-        if (i+1 === this.allPlayers.length){
-          this.allPlayers[0].playerBlind = "big";
+        this.activePlayers[i].playerBlind = "small";
+        if (i+1 === this.activePlayers.length){
+            this.activePlayers[0].playerBlind = "big";
         }else{
-          this.allPlayers[i+1].playerBlind = "big";
+          this.activePlayers[i+1].playerBlind = "big";
         }
         break;
       }
     }
+
     this.deck.fullDeck.shift(); // Burn a card
-    for (let i = 0; i < this.allPlayers.length; i++) { //The pot is set 
-      if (this.allPlayers[i].playerBlind === "small") {
-        this.allPlayers[i].playerMoney -= this.small;
-          this.allPlayers[i].moneyIn += this.small;
-        this.pot += this.small;
-        if (i === this.allPlayers.length - 1) {
-          this.allPlayers[0].playerMoney -= this.big;
-          this.allPlayers[0].moneyIn += this.big;
+    for (let i = 0; i < this.activePlayers.length; i++) { //The pot is set
+      if (this.activePlayers[i].playerBlind === "small") {
+        //Check if player's money is negative because of the small and/or large blind. If it is, they go all in
+        if(this.activePlayers[i].playerMoney < this.small){
+          this.pot+=this.activePlayers[i].playerMoney;
+          this.moneyIn += this.activePlayers[i].playerMoney;
+          this.activePlayers[i].playerMoney = 0;
+          //WARIS will have to implement what actually happesn in the game (as in, their turn gets skipped forever or something)
+        }
+        else{
+          this.activePlayers[i].playerMoney -= this.small;
+          this.activePlayers[i].moneyIn += this.small;
+          this.pot += this.small;
+        }
+        if (i === this.activePlayers.length - 1) {
+          this.activePlayers[0].playerMoney -= this.big;
+          this.activePlayers[0].moneyIn += this.big;
           this.pot += this.big;
         } else {
-          this.allPlayers[i + 1].playerMoney -= this.big;
-          this.allPlayers[i+1].moneyIn += this.big;
+          this.activePlayers[i + 1].playerMoney -= this.big;
+          this.activePlayers[i+1].moneyIn += this.big;
           this.pot += this.big;
         }
       }
     }
 
-    //Check if player's money is negative because of the small and/or large blind. If it is, they are spectators instead
-    this.allPlayers.forEach((player)=>{
-      if(player.playerMoney <= 0){
-        player.isSpectating=true; // Right now, I'm simply making it a UI change. 
-        //WARIS will have to implement what actually happesn in the game (as in, their turn gets skipped forever or something)
-      }// WARIS also has to make someone else pay the small/large blinds, depending on what this specific person has paid.
-    })
+    console.log(this.allPlayers)
+    console.log(this.activePlayers)
+    console.log(this.spectatingPlayers)
+
     this.print()
   }
   //Moves on round, creates community cards, gets the winner, resets current bet/money In if round isn't first round
@@ -264,20 +289,20 @@ class Game {
     if (this.round === 2) { // adding cards to community cards
       this.boardCards = this.deck.fullDeck.splice(0, 3);
 
-      for (var i=0; i<this.allPlayers.length; i++){
-        this.allPlayers[i].createHand(this.boardCards);
-        this.allPlayers[i].type();
-        this.allPlayers[i].moneyIn=0;
-        this.allPlayers[i].turn = "";
+      for (var i=0; i<this.activePlayers.length; i++){
+        this.activePlayers[i].createHand(this.boardCards);
+        this.activePlayers[i].type();
+        this.activePlayers[i].moneyIn=0;
+        this.activePlayers[i].turn = "";
       }
     }else if(this.round === 3 || this.round === 4){
       this.boardCards.push(this.deck.fullDeck.splice(0, 1)[0]);
 
-      for (let i=0; i<this.allPlayers.length; i++){
-        this.allPlayers[i].createHand(this.boardCards);
-        this.allPlayers[i].type();
-        this.allPlayers[i].moneyIn=0;
-        this.allPlayers[i].turn = "";
+      for (let i=0; i<this.activePlayers.length; i++){
+        this.activePlayers[i].createHand(this.boardCards);
+        this.activePlayers[i].type();
+        this.activePlayers[i].moneyIn=0;
+        this.activePlayers[i].turn = "";
       }
       if (this.round === 4){
         this.winner = this.determineRanking();
@@ -313,8 +338,8 @@ class Game {
         return 0; 
     }
     let playas = []; 
-    for (let i=0; i<this.allPlayers.length; i++){
-      if (!this.allPlayers[i].folded) playas.push(this.allPlayers[i]);
+    for (let i=0; i<this.activePlayers.length; i++){
+      if (!this.activePlayers[i].folded) playas.push(this.activePlayers[i]);
     }
     playas.sort(comparePlayers); 
     return playas[0];
@@ -322,7 +347,7 @@ class Game {
 
   //Prints out all info
   print() {
-    console.log("Players Info:", this.allPlayers);
+    console.log("Players Info:", this.activePlayers);
     console.log("Community Cards: ",this.boardCards);
     console.log("Pot: ",this.pot);
   
@@ -356,8 +381,8 @@ function App() {
       setGame(game);
       setRound(game.round);
       changeNextR(false);
-      for(let i=0; i<game.allPlayers.length; i++){
-        if(!game.allPlayers[i].folded){ setTurn(i); break;}
+      for(let i=0; i<game.activePlayers.length; i++){
+        if(!game.activePlayers[i].folded){ setTurn(i); break;}
       }
       toGo(time+1);
     }
@@ -378,9 +403,10 @@ function App() {
   //**TURNS AND AI FUNCTIONS - NEEDS FIXING FOR LATER**
   //Handles player switching. FIX LATER! NEEDS TO START AFTER DEALER, AND NEEDS TO CYCLE AFTER BETS/RAISES!
   const nextTurn = () => {
+    console.log(turn);
     let i = 1;
-    while (turn + i < game.allPlayers.length) {
-      if (!game.allPlayers[turn + i].folded) {
+    while (turn + i < game.activePlayers.length) {
+      if (!game.activePlayers[turn + i].folded) {
         setTurn(turn + i);
         return; 
       }
@@ -400,11 +426,11 @@ function App() {
       if (randomAction === "check") check();
       if (randomAction === "fold") fold();
       if(randomAction !== "raise") nextTurn(); //Now, the next turn will actually be from raise.
-    }, 3000); 
+    }, 500); 
   };
   //Runs the aiMove() every time the turn switches/the round starts/the game starts till rounds end
   useEffect(() => {
-    if (game && game.allPlayers[turn].id !== game.playerID && game.round !== 4) {
+    if (game && game.activePlayers[turn].id !== game.playerID && game.round !== 4) {
       aiMove();
     }
   }, [turn, time]); //Any changes to turn or time vars will make the aiMove() run again.
@@ -412,41 +438,41 @@ function App() {
   // **ALL PLAYER/AI FUNCTIONS**
   function raise(){ //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
 
-    console.log("Player ",game.allPlayers[turn].id+1,"has 'raised'");
-    game.allPlayers[turn].turn="raise";
+    console.log("Player ",game.activePlayers[turn].id+1,"has 'raised'");
+    game.activePlayers[turn].turn="raise";
     let betAmount = game.currentBet + game.big; 
-    if (game.allPlayers[turn].playerMoney < betAmount) {
-        console.log("Player", game.allPlayers[turn].id+1, "doesn't have enough money to raise. will CALL instead.");
+    if (game.activePlayers[turn].playerMoney < betAmount) {
+        console.log("Player", game.activePlayers[turn].id+1, "doesn't have enough money to raise. will CALL instead.");
         call();
     }else{
-    game.allPlayers[turn].playerMoney -= (betAmount - game.allPlayers[turn].moneyIn);
-    game.pot += betAmount - game.allPlayers[turn].moneyIn;
-    game.allPlayers[turn].moneyIn = betAmount;
+    game.activePlayers[turn].playerMoney -= (betAmount - game.activePlayers[turn].moneyIn);
+    game.pot += betAmount - game.activePlayers[turn].moneyIn;
+    game.activePlayers[turn].moneyIn = betAmount;
     game.currentBet = betAmount;
 
     //For now, I'm gonna RESET THE TURNS BACK TO 0, so people have to either bet or call or fold. MR WARIS MUST FIX!
-    for(let i=0; i<game.allPlayers.length; i++){
-      if(!game.allPlayers[i].folded && game.allPlayers[turn].id !== game.allPlayers[i].id){ setTurn(i); break;}
+    for(let i=0; i<game.activePlayers.length; i++){
+      if(!game.activePlayers[i].folded && game.activePlayers[turn].id !== game.activePlayers[i].id){ setTurn(i); break;}
     }
     //nextTurn();
   }}
   function call() { 
     //Check if they have enough money
-    if(game.allPlayers[turn].playerMoney - (game.currentBet - game.allPlayers[turn].moneyIn) < 0){
+    if(game.activePlayers[turn].playerMoney - (game.currentBet - game.activePlayers[turn].moneyIn) < 0){
       console.log("Already Folded")
        fold();
     }else{
 
-    console.log("Player", game.allPlayers[turn].id + 1, "has 'called'");
-    game.allPlayers[turn].turn="call";
+    console.log("Player", game.activePlayers[turn].id + 1, "has 'called'");
+    game.activePlayers[turn].turn="call";
     // Find highest bet
     let highestBet = 0;
-    for (let player of game.allPlayers) {
+    for (let player of game.activePlayers) {
         if (!player.folded) {
             highestBet = Math.max(highestBet, player.moneyIn);
         }
     }
-    let player = game.allPlayers[turn];
+    let player = game.activePlayers[turn];
     // Ensure the calling player matches the highest bet
     let callAmount = highestBet - player.moneyIn;
     if (callAmount > 0) {
@@ -466,16 +492,16 @@ function App() {
   }
   }
   function check(){ //MUST BE IMPLEMENTED!
-    console.log("Player ",game.allPlayers[turn].id+1,"has 'checked'");
-    game.allPlayers[turn].turn="check";
+    console.log("Player ",game.activePlayers[turn].id+1,"has 'checked'");
+    game.activePlayers[turn].turn="check";
     nextTurn();
   }
   function fold(){ //Prints the player who folded, sets their .folded value to True, CHECKS IF OTHER PPL FOLDED TOO 
-    console.log("Player ",game.allPlayers[turn].id+1,"has 'folded'");
-    game.allPlayers[turn].folded=true; // This renders them unable to play/be selected, and adds a red border to show it.
+    console.log("Player ",game.activePlayers[turn].id+1,"has 'folded'");
+    game.activePlayers[turn].folded=true; // This renders them unable to play/be selected, and adds a red border to show it.
 
     //CHECKING IF OTHER PPL FOLDED
-    const activePlayers = game.allPlayers.filter(player => !player.folded);
+    const activePlayers = game.activePlayers.filter(player => !player.folded);
     if (activePlayers.length === 1) {
         game.winner = activePlayers[0];
         game.round = 4; 
