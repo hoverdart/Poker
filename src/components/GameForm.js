@@ -23,23 +23,23 @@ const GameForm = (props) => {
             </div>
             <div className="row mb-2">
                 <div className="col mb-2">
-                    <label htmlFor="smallBlind" className="form-label fw-bold">Small Blind Amount</label>
+                    <label htmlFor="smallBlind" className="form-label fw-bold">Small Blind</label>
                     <div className="input-group">
                         <span className="input-group-text">$</span>
                         <input type="number" className="form-control" id="smallBlind" placeholder="Enter amount" value={smallAmt} onChange={(e)=> {setSmall(e.target.valueAsNumber)}}/>
                     </div>
                     {smallAmt <= 0 && <div className="text-danger">Must be greater than $0.</div>}
-                    {largeAmt < smallAmt && <div className="text-danger">Small Bid Must Be Smaller than the Large Bid.</div>}
+                    {largeAmt < smallAmt && <div className="text-danger">Small Blind Must Be Smaller than the Large Blind.</div>}
                 </div>
             
                 <div className="col mb-2">
-                    <label htmlFor="largeBlind" className="form-label fw-bold">Large Blind Amount</label>
+                    <label htmlFor="largeBlind" className="form-label fw-bold">Large Blind</label>
                     <div className="input-group">
                         <span className="input-group-text">$</span>
                         <input type="number" className="form-control" id="largeBlind" placeholder="Enter amount" value={largeAmt} onChange={(e)=> {setLarge(e.target.valueAsNumber)}} />
                     </div>
                     {largeAmt <= 0 && <div className="text-danger">Must be greater than $0.</div>}
-                    {largeAmt < smallAmt && <div className="text-danger">Large Bid Must Be Larger than the Small Bid.</div>}
+                    {largeAmt < smallAmt && <div className="text-danger">Large Blind Must Be Larger than the Small Blind.</div>}
                 </div>
 
                 <div className="col mb-2">

@@ -251,7 +251,7 @@ class Game {
         //Check if player's money is negative because of the small and/or large blind. If it is, they go all in
         if(this.activePlayers[i].playerMoney < this.small){
           this.pot+=this.activePlayers[i].playerMoney;
-          this.moneyIn += this.activePlayers[i].playerMoney;
+          this.activePlayers[i].moneyIn += this.activePlayers[i].playerMoney;
           this.activePlayers[i].playerMoney = 0;
           //WARIS will have to implement what actually happesn in the game (as in, their turn gets skipped forever or something)
         }
@@ -391,12 +391,24 @@ function App() {
   function handleNextGame() {
     if (game) {
       game.nextGame();
-      setGame(game);
-      setGameNum(game.game);
-      setRound(game.round);
-      changeNextR(false);
-      setTurn(0);
-      toGo(time+1);
+      //Before we do EVERYTHING ELSE, it's time that we check if there's the SOLE WINNAH.
+      if(game.activePlayers.length === 1){
+        let proString = "Player " + (game.activePlayers[0].id+1) + " has won!!"
+        window.alert(proString);
+        proString = "Over "+(game.game-1)+" games, this player has amassed $"+game.activePlayers[0].playerMoney+"!!!"
+        window.alert(proString);
+        window.alert("We need to make a proper `winning` page. For now, you get to restart the game.");
+        setGame(null);
+      }else{
+        console.log("Next Game Time!")
+        game.nextGame();
+        setGame(game);
+        setGameNum(game.game);
+        setRound(game.round);
+        changeNextR(false);
+        setTurn(0);
+        toGo(time+1);
+      } 
     }
   }
 
