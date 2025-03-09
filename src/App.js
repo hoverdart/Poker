@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import GameForm from "./components/GameForm";
 import GameDisplay from "./components/GameDisplay";
 
+console.log("hi")
 class Card {
   constructor(suit, value) {
     this.suit = suit;
