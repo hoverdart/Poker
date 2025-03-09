@@ -7,7 +7,6 @@ const GameDisplay = (props) => {
   //Modal Vars
   const [show, setShow] = useState(false); //Handles opening/closing modal
   const [money, setMoney] = useState("");
-  const [allIn, notAllIn] = useState(false);
 
   return (
     <div className="container mt-4 p-4 bg-light shadow-lg rounded">
@@ -76,14 +75,15 @@ const GameDisplay = (props) => {
                   </div>
                 )}
 
+                {props.game.allPlayers[props.game.playerID].playerMoney && 
                 <Modal show={show} onHide={() => setShow(false)}>
                   <Modal.Header closeButton>
                     <Modal.Title className="fw-bold">💰 Raise Your Bet</Modal.Title>
                   </Modal.Header>
                   <Modal.Body>
                     <div className="mb-3">
-                      <h5 className="mb-1">Your Money: <strong className="text-success">${props.game.activePlayers[props.game.playerID].playerMoney}</strong></h5>
-                      <h5 className="mb-1">Money In: <strong className="text-primary">${props.game.activePlayers[props.game.playerID].moneyIn}</strong></h5>
+                      <h5 className="mb-1">Your Money: <strong className="text-success">${props.game.allPlayers[props.game.playerID].playerMoney}</strong></h5>
+                      <h5 className="mb-1">Money In: <strong className="text-primary">${props.game.allPlayers[props.game.playerID].moneyIn}</strong></h5>
                       <h5>Current Bet: <strong className="text-warning">${props.game.currentBet}</strong></h5>
                     </div>
                     <label htmlFor="raiseAmount" className="form-label fw-bold">Raise Amount</label>
@@ -93,23 +93,24 @@ const GameDisplay = (props) => {
                     </div>
                     <div className="mt-2">
                       {money <= 0 && <div className="text-danger fw-bold">⚠ Must be greater than $0.</div>}
-                      {money > props.game.activePlayers[props.game.playerID].playerMoney && (<div className="text-danger fw-bold">⚠ Cannot exceed current money.</div>)}
-                      {money <= props.game.activePlayers[props.game.playerID].playerMoney && money > 0 && (
+                      {money > props.game.allPlayers[props.game.playerID].playerMoney && (<div className="text-danger fw-bold">⚠ Cannot exceed current money.</div>)}
+                      {money <= props.game.allPlayers[props.game.playerID].playerMoney && money > 0 && (
                         <div className="alert alert-info mt-2">
                           <strong>New Stats:</strong>
-                          <br /> Loss: <strong>${props.game.currentBet + money - props.game.activePlayers[props.game.playerID].moneyIn}</strong>
-                          <br /> New Balance: <strong>${props.game.activePlayers[props.game.playerID].playerMoney - (props.game.currentBet + money - props.game.activePlayers[props.game.playerID].moneyIn)}</strong>
+                          <br /> Loss: <strong>${props.game.currentBet + money - props.game.allPlayers[props.game.playerID].moneyIn}</strong>
+                          <br /> New Balance: <strong>${props.game.allPlayers[props.game.playerID].playerMoney - (props.game.currentBet + money - props.game.allPlayers[props.game.playerID].moneyIn)}</strong>
                           <br /> New Bet: <strong>${props.game.currentBet + money}</strong>
                         </div>)}
                     </div>
                   </Modal.Body>
                   <Modal.Footer>
                     <button className="btn btn-outline-secondary" onClick={() => setShow(false)}>Cancel</button>
-                    <button className="btn btn-success" onClick={() => {props.raise(money);setMoney(0);setShow(false);}} disabled={money <= 0 || money > props.game.activePlayers[props.game.playerID].playerMoney}>
+                    <button className="btn btn-success" onClick={() => {props.raise(money);setMoney(0);setShow(false);}} disabled={money <= 0 || money > props.game.allPlayers[props.game.playerID].playerMoney}>
                       Raise!
                     </button>
                   </Modal.Footer>
-                </Modal>
+                </Modal> 
+                }
               </div>
             </div>
           </div>

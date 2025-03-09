@@ -48,6 +48,7 @@ class Player {
     this.moneyIn = 0;
     this.turn="";
     this.isSpectating = false;
+    this.allIn = false;
   }
   //creates "full hand" w/ community cards
   createHand(communityCards){ 
@@ -210,12 +211,15 @@ class Game {
     this.currentBet=this.big;
 
     for (let i = 0; i < this.allPlayers.length; i++) {
+      this.allPlayers[i].handType="N/A";
+      this.allPlayers[i].fullHand=[]
+      this.allPlayers[i].folded=false;
+      this.allPlayers[i].moneyIn = 0;
+      this.allPlayers[i].turn = "";
+      this.allPlayers[i].allIn=false;
       if(this.allPlayers[i].playerMoney <= 0){
         this.allPlayers[i].isSpectating = true;
       }
-    }
-
-    for(let i=0; i<this.allPlayers.length; i++){
       if(this.allPlayers[i].isSpectating===true){
         this.spectatingPlayers.push(this.allPlayers[i]);
       }
@@ -224,13 +228,20 @@ class Game {
       }
     }
 
+    console.log("The Active Players Are: ",this.activePlayers);
+    //The Changes Below ONLY APPLY TO ACTIVE PLAYERS.
     for (let i = 0; i < this.activePlayers.length; i++) { // Player's decks are remade, resets everything, moves small/big blinds up
       this.activePlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
-      this.activePlayers[i].handType="N/A";
-      this.activePlayers[i].folded=false;
-      this.activePlayers[i].moneyIn = 0;
-      this.activePlayers[i].turn = "";
+      //this.activePlayers[i].handType="N/A";
+      //this.activePlayers[i].fullHand=[]
+      //this.activePlayers[i].folded=false;
+      //this.activePlayers[i].moneyIn = 0;
+      //this.activePlayers[i].turn = "";
+      //this.activePlayers[i].allIn=false;
+    }
 
+    //Assigning blinds (NOT subtracting money yet)
+    for (let i=0; i<this.activePlayers.length; i++){
       if (this.activePlayers[i].playerBlind === "big"){
         for (let i=0; i<this.activePlayers.length;i++){
           this.activePlayers[i].playerBlind="";
@@ -244,29 +255,37 @@ class Game {
         break;
       }
     }
-
     this.deck.fullDeck.shift(); // Burn a card
-    for (let i = 0; i < this.activePlayers.length; i++) { //The pot is set
+
+    for (let i = 0; i < this.activePlayers.length; i++) { //NOW assigning blind money, setting pot
       if (this.activePlayers[i].playerBlind === "small") {
-        //Check if player's money is negative because of the small and/or large blind. If it is, they go all in
+        //Check if player's money is negative because of the small blind. If it is, they go all in
         if(this.activePlayers[i].playerMoney < this.small){
           this.pot+=this.activePlayers[i].playerMoney;
           this.activePlayers[i].moneyIn += this.activePlayers[i].playerMoney;
           this.activePlayers[i].playerMoney = 0;
-          //WARIS will have to implement what actually happesn in the game (as in, their turn gets skipped forever or something)
+          this.activePlayers[i].allIn = true;
         }
         else{
           this.activePlayers[i].playerMoney -= this.small;
           this.activePlayers[i].moneyIn += this.small;
           this.pot += this.small;
         }
-        if (i === this.activePlayers.length - 1) {
-          this.activePlayers[0].playerMoney -= this.big;
-          this.activePlayers[0].moneyIn += this.big;
-          this.pot += this.big;
-        } else {
-          this.activePlayers[i + 1].playerMoney -= this.big;
-          this.activePlayers[i+1].moneyIn += this.big;
+
+        //bruh, you needed to add a case for going all infor the large blind
+        let playerWithBigBlind = 0
+        if (i !== this.activePlayers.length - 1) { 
+          if(this.activePlayers[0].playerMoney)
+          playerWithBigBlind = i+1;
+        }
+        if(this.activePlayers[playerWithBigBlind].playerMoney < this.big){
+          this.pot+=this.activePlayers[playerWithBigBlind].playerMoney;
+          this.activePlayers[playerWithBigBlind].moneyIn += this.activePlayers[i].playerMoney;
+          this.activePlayers[playerWithBigBlind].playerMoney = 0;
+          this.activePlayers[playerWithBigBlind].allIn = true;
+        }else{
+          this.activePlayers[playerWithBigBlind].playerMoney -= this.big;
+          this.activePlayers[playerWithBigBlind].moneyIn += this.big;
           this.pot += this.big;
         }
       }
@@ -390,6 +409,7 @@ function App() {
   //Runs once 4 Rounds Conclude. Uses Game functions to reset everyone's hands/round #, starts game again.
   function handleNextGame() {
     if (game) {
+      console.log("Creating the new game")
       game.nextGame();
       //Before we do EVERYTHING ELSE, it's time that we check if there's the SOLE WINNAH.
       if(game.activePlayers.length === 1){
@@ -401,11 +421,11 @@ function App() {
         setGame(null);
       }else{
         console.log("Next Game Time!")
-        game.nextGame();
         setGame(game);
         setGameNum(game.game);
         setRound(game.round);
         changeNextR(false);
+        console.log(game);
         setTurn(0);
         toGo(time+1);
       } 
@@ -415,7 +435,6 @@ function App() {
   //**TURNS AND AI FUNCTIONS - NEEDS FIXING FOR LATER**
   //Handles player switching. FIX LATER! NEEDS TO START AFTER DEALER, AND NEEDS TO CYCLE AFTER BETS/RAISES!
   const nextTurn = () => {
-    console.log(turn);
     let i = 1;
     while (turn + i < game.activePlayers.length) {
       if (!game.activePlayers[turn + i].folded) {
