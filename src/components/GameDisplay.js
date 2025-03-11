@@ -58,12 +58,12 @@ const GameDisplay = (props) => {
                 <p className="card-text">
                   <strong>Hand:</strong>{" "}
                   {player.playerHand.map((card, index) => (
-                    <span key={index} className={`badge mx-1 ${card.symbol === "♦" || card.symbol === "♥" ? "bg-danger" : "bg-secondary"}`}>
+                    <span key={index} className={`badge mx-1 ${card.symbol === "♦" || card.symbol === "♥" ? "bg-danger" : "bg-secondary"}`} style={player.id !== props.game.playerID && props.round !== 4 ? {filter:"blur(4px)"}:{}}>
                       {card.name} {card.symbol}
                     </span>))}
                 </p>
                 <p className="card-text">
-                  <strong>Hand Type:</strong> {player.handType}
+                  <strong>Hand Type:</strong> {player.id !== props.game.playerID && props.round !== 4 ? "???" : player.handType}
                 </p>
                 {/* Player Actions - Disabled when not their turn/is round 4/time for next round*/}
                 {player.id === props.game.playerID && (
@@ -75,7 +75,7 @@ const GameDisplay = (props) => {
                   </div>
                 )}
 
-                {props.game.allPlayers[props.game.playerID].playerMoney && 
+                {props.game.allPlayers[props.game.playerID].playerMoney !== null && 
                 <Modal show={show} onHide={() => setShow(false)}>
                   <Modal.Header closeButton>
                     <Modal.Title className="fw-bold">💰 Raise Your Bet</Modal.Title>

@@ -12,7 +12,7 @@ const GameForm = (props) => {
         props.onSubmit(playerCount,smallAmt,largeAmt,money);
     }
     //Checks if the form is ready to submit or not, and undisables the button if it is.
-    const isFormValid = playerCount >= 2 && smallAmt > 0 && largeAmt > 0 && money > 0;
+    const isFormValid = playerCount >= 2 && smallAmt > 0 && largeAmt > 0 && money > 0 && largeAmt < money;
     return (
         <div className="container-sm p-4 rounded shadow bg-light">
             <h3 className="mb-4 text-center"><strong>Set Up The Game</strong></h3>
@@ -48,7 +48,7 @@ const GameForm = (props) => {
                         <span className="input-group-text">$</span>
                         <input type="number" className="form-control" id="startingMoney" placeholder="Enter amount" value={money} onChange={(e)=> {setMoney(e.target.valueAsNumber)}}/>
                     </div>
-                    {money <= 0 && <div className="text-danger fw-bold">⚠ Must be greater than $0.</div>}
+                    {money <= 0 && <div className="text-danger fw-bold">⚠ Must be greater than $0.</div>} {money < largeAmt && <div className="text-danger fw-bold">⚠ Must be greater than the large bid.</div>}
                 </div>
             </div>
 

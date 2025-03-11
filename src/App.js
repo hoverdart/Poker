@@ -246,58 +246,48 @@ class Game {
     }
 
     //Assigning blinds (NOT subtracting money yet)
-    for (let i=0; i<this.activePlayers.length; i++){
-      if (this.activePlayers[i].playerBlind === "big"){
-        for (let i=0; i<this.activePlayers.length;i++){
-          this.activePlayers[i].playerBlind="";
-        }
+    for (let i = 0; i < this.activePlayers.length; i++) {
+      if (this.activePlayers[i].playerBlind === "big") {
+        this.activePlayers.forEach(player => player.playerBlind = "");
         this.activePlayers[i].playerBlind = "small";
-        if (i+1 === this.activePlayers.length){
-            this.activePlayers[0].playerBlind = "big";
-        }else{
-          this.activePlayers[i+1].playerBlind = "big";
-        }
-        break;
+        let nextIndex = (i + 1) % this.activePlayers.length;
+        this.activePlayers[nextIndex].playerBlind = "big";
+        break; 
       }
-    }
+  }
     this.deck.fullDeck.shift(); // Burn a card
 
-    for (let i = 0; i < this.activePlayers.length; i++) { //NOW assigning blind money, setting pot
+    for (let i = 0; i < this.activePlayers.length; i++) { // NOW assigning blind money, setting pot
       if (this.activePlayers[i].playerBlind === "small") {
-        //Check if player's money is negative because of the small blind. If it is, they go all in
-        if(this.activePlayers[i].playerMoney < this.small){
-          this.pot+=this.activePlayers[i].playerMoney;
+        // Small blind: Check if player is all-in
+        if (this.activePlayers[i].playerMoney < this.small) {
+          this.pot += this.activePlayers[i].playerMoney;
           this.activePlayers[i].moneyIn += this.activePlayers[i].playerMoney;
           this.activePlayers[i].playerMoney = 0;
           this.activePlayers[i].allIn = true;
-        }
-        else{
+          console.log("Small blind player",i+1,"is all in")
+        }else{
           this.activePlayers[i].playerMoney -= this.small;
           this.activePlayers[i].moneyIn += this.small;
           this.pot += this.small;
         }
 
-        //bruh, you needed to add a case for going all infor the large blind
-        let playerWithBigBlind = 0
-        if (i !== this.activePlayers.length - 1) { 
-          if(this.activePlayers[0].playerMoney)
-          playerWithBigBlind = i+1;
-        }
-        if(this.activePlayers[playerWithBigBlind].playerMoney < this.big){
-          this.pot+=this.activePlayers[playerWithBigBlind].playerMoney;
-          this.activePlayers[playerWithBigBlind].moneyIn += this.activePlayers[i].playerMoney;
+        let playerWithBigBlind = (i + 1) % this.activePlayers.length;
+        // Big blind: Check if player is all-in
+        if (this.activePlayers[playerWithBigBlind].playerMoney < this.big) {
+          this.pot += this.activePlayers[playerWithBigBlind].playerMoney;
+          this.activePlayers[playerWithBigBlind].moneyIn += this.activePlayers[playerWithBigBlind].playerMoney;
           this.activePlayers[playerWithBigBlind].playerMoney = 0;
           this.activePlayers[playerWithBigBlind].allIn = true;
+          console.log("Big blind player",playerWithBigBlind+1,"is all in")
         }else{
           this.activePlayers[playerWithBigBlind].playerMoney -= this.big;
           this.activePlayers[playerWithBigBlind].moneyIn += this.big;
           this.pot += this.big;
         }
+        break;
       }
     }
-
-    this.activeBackup = this.activePlayers;
-
     console.log(this.allPlayers)
     console.log(this.activePlayers)
     console.log(this.spectatingPlayers)
@@ -307,7 +297,6 @@ class Game {
   //Moves on round, creates community cards, gets the winner, resets current bet/money In if round isn't first round
   nextRound() {
     this.round+=1;
-    this.raiseActivePlayers = [];
     this.redoTurn=-999;
     if(this.round === 1){
       this.currentBet=this.big;
@@ -336,8 +325,6 @@ class Game {
         this.winner = this.determineRanking();
       }
     }
-
-    this.activePlayers = this.activeBackup;
     this.print()
   }
   //Finds the winner by ranking hands, then card values, then suits.
@@ -481,7 +468,6 @@ function App() {
 
   // **ALL PLAYER/AI FUNCTIONS**
   function raise(money=game.big){ //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
-    game.activePlayers = game.activeBackup;
     console.log("Player ",game.activePlayers[turn].id+1,"has 'raised'");
     game.activePlayers[turn].turn="raise";
     if(game.activePlayers[turn] !== game.playerID) money=Math.floor(Math.random()*money+1);
