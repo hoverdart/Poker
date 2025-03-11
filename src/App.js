@@ -150,6 +150,13 @@ class Player {
     }
     this.handType = bestHandType;
   }
+
+  allIn(){
+    this.allIn = true;
+    this.pot += this.playerMoney;
+    this.moneyIn += this.playerMoney;
+    this.playerMoney = 0;
+  }
 }
 class Bot extends Player{
   constructor(botID) {
@@ -175,6 +182,8 @@ class Game {
     this.currentBet=0;
     this.spectatingPlayers = [];
     this.activePlayers = [];
+    this.raiseActivePlayers = [];
+    this.activeBackup = [];
   }
   //Initializes game by setting values
   start(players, small, big, startingMoney) {
@@ -192,6 +201,7 @@ class Game {
       this.allPlayers.push(newPlayer);
     }
     this.playerID = Math.floor(Math.random()*this.allPlayers.length); // Creates user player
+    this.raiseActivePlayers = this.allPlayers;
     this.nextGame()
   }
   nextGame() { // Essentially start of a new game, resetting values
@@ -199,6 +209,9 @@ class Game {
     this.round = 1;
     this.spectatingPlayers = [];
     this.activePlayers = [];
+    this.raiseActivePlayers = [];
+    this.activeBackup = [];
+    
     //Depositing money for the winnah
     if (this.winner !== 0){
       this.winner.playerMoney +=  this.pot;
@@ -291,6 +304,8 @@ class Game {
       }
     }
 
+    this.activeBackup = this.activePlayers;
+
     console.log(this.allPlayers)
     console.log(this.activePlayers)
     console.log(this.spectatingPlayers)
@@ -300,6 +315,7 @@ class Game {
   //Moves on round, creates community cards, gets the winner, resets current bet/money In if round isn't first round
   nextRound() {
     this.round+=1;
+    this.raiseActivePlayers = [];
     if(this.round === 1){
       this.currentBet=this.big;
     }else{
@@ -327,6 +343,8 @@ class Game {
         this.winner = this.determineRanking();
       }
     }
+
+    this.activePlayers = this.activeBackup;
     this.print()
   }
   //Finds the winner by ranking hands, then card values, then suits.
@@ -448,7 +466,7 @@ function App() {
   //Handles "AI" Moves (Random Choice between options)
   const aiMove = () => {
     setTimeout(() => {
-      let actions = ["raise","call", "fold", "check"]; 
+      let actions = ["raise","call", "fold", "check"];
       if(game.currentBet !== 0) actions[3] = "call";
       else actions[1] = "check";
       const randomAction = actions[Math.floor(Math.random() * actions.length)];
@@ -468,7 +486,7 @@ function App() {
 
   // **ALL PLAYER/AI FUNCTIONS**
   function raise(money=game.big){ //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
-
+    game.activePlayers = game.activeBackup;
     console.log("Player ",game.activePlayers[turn].id+1,"has 'raised'");
     game.activePlayers[turn].turn="raise";
     if(game.activePlayers[turn] !== game.playerID) money=Math.floor(Math.random()*money+1);
@@ -483,7 +501,31 @@ function App() {
     game.currentBet = betAmount;
 
     //For now, I'm gonna RESET THE TURNS BACK TO 0, so people have to either bet or call or fold. MR WARIS MUST FIX!
-    for(let i=0; i<game.activePlayers.length; i++){
+    
+    game.raiseActivePlayers = game.activePlayers;
+    console.log(game.activePlayers);
+    console.log(game.raiseActivePlayers);
+    for (let i = 0; i < game.activePlayers.length; i++) {
+      if (i>=game.activePlayers.length-turn){
+        console.log("turn+i-game.activePlayers.length")
+        console.log(turn+i-game.activePlayers.length)
+        game.activePlayers[i] = game.raiseActivePlayers[turn+i-game.activePlayers.length];
+        console.log(game.activePlayers);
+        console.log(game.raiseActivePlayers);
+      }
+      else{
+        console.log("turn+i")
+        console.log(turn+i)
+        game.activePlayers[i] = game.raiseActivePlayers[turn+i];
+        console.log(game.activePlayers);
+        console.log(game.raiseActivePlayers);
+      }
+    }  
+
+    console.log("im new")
+    console.log(game.activePlayers);
+    console.log(game.raiseActivePlayers);
+    for(let i=1; i<game.activePlayers.length; i++){
       if(!game.activePlayers[i].folded && game.activePlayers[turn].id !== game.activePlayers[i].id){ setTurn(i); break;}
     }
     //nextTurn();
@@ -491,36 +533,34 @@ function App() {
   function call() { 
     //Check if they have enough money
     if(game.activePlayers[turn].playerMoney - (game.currentBet - game.activePlayers[turn].moneyIn) < 0){
-      console.log("Already Folded")
-       fold();
+      game.activePlayers[turn].allIn();
     }else{
-
-    console.log("Player", game.activePlayers[turn].id + 1, "has 'called'");
-    game.activePlayers[turn].turn="call";
-    // Find highest bet
-    let highestBet = 0;
-    for (let player of game.activePlayers) {
-        if (!player.folded) {
-            highestBet = Math.max(highestBet, player.moneyIn);
-        }
-    }
-    let player = game.activePlayers[turn];
-    // Ensure the calling player matches the highest bet
-    let callAmount = highestBet - player.moneyIn;
-    if (callAmount > 0) {
-        if (player.playerMoney >= callAmount) {
-            player.playerMoney -= callAmount;
-            player.moneyIn += callAmount;
-            game.pot += callAmount;
-        } else {
-            console.log("Player", player.id + 1, "does not have enough money to call.");
-            fold();
-        }
-    } else {
-        console.log("Player", player.id + 1, "is already at the highest bet.");
-    }
-    game.currentBet = highestBet;
-    nextTurn();
+      console.log("Player", game.activePlayers[turn].id + 1, "has 'called'");
+      game.activePlayers[turn].turn="call";
+      // Find highest bet
+      let highestBet = 0;
+      for (let player of game.activePlayers) {
+          if (!player.folded) {
+              highestBet = Math.max(highestBet, player.moneyIn);
+          }
+      }
+      let player = game.activePlayers[turn];
+      // Ensure the calling player matches the highest bet
+      let callAmount = highestBet - player.moneyIn;
+      if (callAmount > 0) {
+          if (player.playerMoney >= callAmount) {
+              player.playerMoney -= callAmount;
+              player.moneyIn += callAmount;
+              game.pot += callAmount;
+          } else {
+              console.log("Player", player.id + 1, "does not have enough money to call.");
+              player.allIn();
+          }
+      } else {
+          console.log("Player", player.id + 1, "is already at the highest bet.");
+      }
+      game.currentBet = highestBet;
+      nextTurn();
   }
   }
   function check(){ //MUST BE IMPLEMENTED!
