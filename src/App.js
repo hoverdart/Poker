@@ -182,8 +182,7 @@ class Game {
     this.currentBet=0;
     this.spectatingPlayers = [];
     this.activePlayers = [];
-    this.raiseActivePlayers = [];
-    this.activeBackup = [];
+    this.redoTurn=-999;
   }
   //Initializes game by setting values
   start(players, small, big, startingMoney) {
@@ -209,8 +208,7 @@ class Game {
     this.round = 1;
     this.spectatingPlayers = [];
     this.activePlayers = [];
-    this.raiseActivePlayers = [];
-    this.activeBackup = [];
+    this.redoTurn=-999;
     
     //Depositing money for the winnah
     if (this.winner !== 0){
@@ -245,12 +243,6 @@ class Game {
     //The Changes Below ONLY APPLY TO ACTIVE PLAYERS.
     for (let i = 0; i < this.activePlayers.length; i++) { // Player's decks are remade, resets everything, moves small/big blinds up
       this.activePlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
-      //this.activePlayers[i].handType="N/A";
-      //this.activePlayers[i].fullHand=[]
-      //this.activePlayers[i].folded=false;
-      //this.activePlayers[i].moneyIn = 0;
-      //this.activePlayers[i].turn = "";
-      //this.activePlayers[i].allIn=false;
     }
 
     //Assigning blinds (NOT subtracting money yet)
@@ -316,6 +308,7 @@ class Game {
   nextRound() {
     this.round+=1;
     this.raiseActivePlayers = [];
+    this.redoTurn=-999;
     if(this.round === 1){
       this.currentBet=this.big;
     }else{
@@ -454,9 +447,12 @@ function App() {
   //Handles player switching. FIX LATER! NEEDS TO START AFTER DEALER, AND NEEDS TO CYCLE AFTER BETS/RAISES!
   const nextTurn = () => {
     let i = 1;
-    while (turn + i < game.activePlayers.length) {
-      if (!game.activePlayers[turn + i].folded) {
-        setTurn(turn + i);
+    let tempTurn=turn;
+    while (tempTurn + i < game.activePlayers.length || game.redoTurn > 0) {
+      if(tempTurn+i >= game.activePlayers.length){console.log("Resetting Iteration 'Till Player ", game.redoTurn); tempTurn=0; i=0;} 
+      if(tempTurn+i === game.redoTurn) {console.log("Last Player Who Raised has been Reached!!"); break;}
+      if (!game.activePlayers[tempTurn + i].folded) {
+        setTurn(tempTurn + i);
         return; 
       }
       i += 1;
@@ -474,7 +470,6 @@ function App() {
       if (randomAction === "call") call();
       if (randomAction === "check") check();
       if (randomAction === "fold") fold();
-      if(randomAction !== "raise") nextTurn(); //Now, the next turn will actually be from raise.
     }, 1000); 
   };
   //Runs the aiMove() every time the turn switches/the round starts/the game starts till rounds end
@@ -500,35 +495,8 @@ function App() {
     game.activePlayers[turn].moneyIn = betAmount;
     game.currentBet = betAmount;
 
-    //For now, I'm gonna RESET THE TURNS BACK TO 0, so people have to either bet or call or fold. MR WARIS MUST FIX!
-    
-    game.raiseActivePlayers = game.activePlayers;
-    console.log(game.activePlayers);
-    console.log(game.raiseActivePlayers);
-    for (let i = 0; i < game.activePlayers.length; i++) {
-      if (i>=game.activePlayers.length-turn){
-        console.log("turn+i-game.activePlayers.length")
-        console.log(turn+i-game.activePlayers.length)
-        game.activePlayers[i] = game.raiseActivePlayers[turn+i-game.activePlayers.length];
-        console.log(game.activePlayers);
-        console.log(game.raiseActivePlayers);
-      }
-      else{
-        console.log("turn+i")
-        console.log(turn+i)
-        game.activePlayers[i] = game.raiseActivePlayers[turn+i];
-        console.log(game.activePlayers);
-        console.log(game.raiseActivePlayers);
-      }
-    }  
-
-    console.log("im new")
-    console.log(game.activePlayers);
-    console.log(game.raiseActivePlayers);
-    for(let i=1; i<game.activePlayers.length; i++){
-      if(!game.activePlayers[i].folded && game.activePlayers[turn].id !== game.activePlayers[i].id){ setTurn(i); break;}
-    }
-    //nextTurn();
+    game.redoTurn = turn;
+    nextTurn();
   }}
   function call() { 
     //Check if they have enough money
