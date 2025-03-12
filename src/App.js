@@ -245,7 +245,8 @@ class Game {
       this.activePlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
     }
 
-    //Assigning blinds (NOT subtracting money yet)
+    //Assigning blinds (NOT subtracting money yet) (ONLY ASSIGN AFTER 1ST GAME)
+    if (this.game > 1){
     for (let i = 0; i < this.activePlayers.length; i++) {
       if (this.activePlayers[i].playerBlind === "big") {
         this.activePlayers.forEach(player => player.playerBlind = "");
@@ -254,8 +255,9 @@ class Game {
         this.activePlayers[nextIndex].playerBlind = "big";
         break; 
       }
-  }
-    this.deck.fullDeck.shift(); // Burn a card
+    }
+    this.deck.fullDeck.shift(); // Burn a card 
+    }
 
     for (let i = 0; i < this.activePlayers.length; i++) { // NOW assigning blind money, setting pot
       if (this.activePlayers[i].playerBlind === "small") {
@@ -285,6 +287,9 @@ class Game {
           this.activePlayers[playerWithBigBlind].moneyIn += this.big;
           this.pot += this.big;
         }
+
+        //I'm starting the turn from the person after the big blind.
+        this.redoTurn = (i + 2) % this.activePlayers.length;
         break;
       }
     }
@@ -388,7 +393,7 @@ function App() {
     setGame(newGame);
     setGameNum(1);
     setRound(1);
-    setTurn(0)
+    setTurn(newGame.redoTurn); //STARTING FROM THE GUY WITH REDOTURN
     toGo(time+1)
   }
   //Moves to Next Round, disables Round Button, decides next player to cycle
@@ -436,7 +441,7 @@ function App() {
     let i = 1;
     let tempTurn=turn;
     while (tempTurn + i < game.activePlayers.length || game.redoTurn > 0) {
-      if(tempTurn+i >= game.activePlayers.length){console.log("Resetting Iteration 'Till Player ", game.redoTurn); tempTurn=0; i=0;} 
+      if(tempTurn+i >= game.activePlayers.length){console.log("Resetting Iteration 'Till Player ", game.redoTurn+1); tempTurn=0; i=0;} 
       if(tempTurn+i === game.redoTurn) {console.log("Last Player Who Raised has been Reached!!"); break;}
       if (!game.activePlayers[tempTurn + i].folded) {
         setTurn(tempTurn + i);
@@ -470,7 +475,7 @@ function App() {
   function raise(money=game.big){ //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
     console.log("Player ",game.activePlayers[turn].id+1,"has 'raised'");
     game.activePlayers[turn].turn="raise";
-    if(game.activePlayers[turn] !== game.playerID) money=Math.floor(Math.random()*money+1);
+    if(game.activePlayers[turn].id !== game.playerID) money=Math.floor(Math.random()*money+1);
     let betAmount = game.currentBet + money; 
     if (game.activePlayers[turn].playerMoney < betAmount) {
         console.log("Player", game.activePlayers[turn].id+1, "doesn't have enough money to raise. will CALL instead.");
@@ -480,7 +485,7 @@ function App() {
     game.pot += betAmount - game.activePlayers[turn].moneyIn;
     game.activePlayers[turn].moneyIn = betAmount;
     game.currentBet = betAmount;
-
+    console.log("Raise Amount: ", game.currentBet);
     game.redoTurn = turn;
     nextTurn();
   }}

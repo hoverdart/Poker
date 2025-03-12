@@ -94,7 +94,8 @@ const GameDisplay = (props) => {
                     <div className="mt-2">
                       {money <= 0 && <div className="text-danger fw-bold">⚠ Must be greater than $0.</div>}
                       {money > props.game.allPlayers[props.game.playerID].playerMoney && (<div className="text-danger fw-bold">⚠ Cannot exceed current money.</div>)}
-                      {money <= props.game.allPlayers[props.game.playerID].playerMoney && money > 0 && (
+                      {money > props.game.allPlayers[props.game.playerID].playerMoney - (props.game.currentBet- props.game.allPlayers[props.game.playerID].moneyIn) && (<div className="text-danger fw-bold">⚠ Raise Amount + Current Bet cannot exceed current money.</div>)}
+                      {money <= props.game.allPlayers[props.game.playerID].playerMoney - (props.game.currentBet- props.game.allPlayers[props.game.playerID].moneyIn) && money > 0 && (
                         <div className="alert alert-info mt-2">
                           <strong>New Stats:</strong>
                           <br /> Loss: <strong>${props.game.currentBet + money - props.game.allPlayers[props.game.playerID].moneyIn}</strong>
@@ -105,7 +106,7 @@ const GameDisplay = (props) => {
                   </Modal.Body>
                   <Modal.Footer>
                     <button className="btn btn-outline-secondary" onClick={() => setShow(false)}>Cancel</button>
-                    <button className="btn btn-success" onClick={() => {props.raise(money);setMoney(0);setShow(false);}} disabled={money <= 0 || money > props.game.allPlayers[props.game.playerID].playerMoney}>
+                    <button className="btn btn-success" onClick={() => {props.raise(money);setMoney(0);setShow(false);}} disabled={money <= 0 || money > props.game.allPlayers[props.game.playerID].playerMoney - (props.game.currentBet -props.game.allPlayers[props.game.playerID].moneyIn) }>
                       Raise!
                     </button>
                   </Modal.Footer>
