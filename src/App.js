@@ -429,7 +429,7 @@ function App() {
         setRound(game.round);
         changeNextR(false);
         console.log(game);
-        setTurn(0);
+        setTurn(game.redoTurn);
         toGo(time+1);
       } 
     }
