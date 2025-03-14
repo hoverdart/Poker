@@ -49,6 +49,8 @@ class Player {
     this.turn="";
     this.isSpectating = false;
     this.allIn = false;
+    this.sidePotChecked = false;
+    this.totalMoneyIn = 0;
   }
   //creates "full hand" w/ community cards
   createHand(communityCards){ 
@@ -151,10 +153,26 @@ class Player {
     this.handType = bestHandType;
   }
 
-  allIn(){
+  goAllIn(game){
     this.allIn = true;
-    this.pot += this.playerMoney;
+    if(game.sidePot.length>0){
+      game.pot += game.pot;
+      this.playerMoney-= game.pot;
+      for(let i=0;i<game.sidePot.length; i++){
+        if(i===game.sidePot.length-1){
+          game.sidePot[i]+=this.playerMoney;
+        }
+        else{
+          game.sidePot[i]+=game.sidePot[i];
+          this.playerMoney-=game.sidePot[i];
+        }
+      }
+    }
+    else{
+      game.pot += this.playerMoney;
+    }
     this.moneyIn += this.playerMoney;
+    this.totalMoneyIn += this.playerMoney;
     this.playerMoney = 0;
   }
 }
@@ -182,6 +200,8 @@ class Game {
     this.currentBet=0;
     this.spectatingPlayers = [];
     this.activePlayers = [];
+    this.sidePotPlayers = [];
+    this.sidePot = [];
     this.redoTurn=-999;
   }
   //Initializes game by setting values
@@ -226,8 +246,10 @@ class Game {
       this.allPlayers[i].fullHand=[]
       this.allPlayers[i].folded=false;
       this.allPlayers[i].moneyIn = 0;
+      this.allPlayers[i].totalMoneyIn = 0;
       this.allPlayers[i].turn = "";
       this.allPlayers[i].allIn=false;
+      this.allPlayers[i].sidePotChecked = false;
       if(this.allPlayers[i].playerMoney <= 0){
         this.allPlayers[i].isSpectating = true;
       }
@@ -359,12 +381,21 @@ class Game {
         }
         return 0; 
     }
-    let playas = []; 
-    for (let i=0; i<this.activePlayers.length; i++){
-      if (!this.activePlayers[i].folded) playas.push(this.activePlayers[i]);
+    let playas = [[]];
+    for(let x=0; x<this.sidePot.length; x++){
+      for (let i=0; i<this.activePlayers.length; i++){
+        if(this.activePlayers[i].totalMoneyIn >= this.sidePot[i]){
+          this.activePlayers[i].totalMoneyIn-=this.sidePot[i];
+          if (!this.activePlayers[i].folded) playas[x].push(this.activePlayers[i]);
+        }
+      }
+      playas[x].sort(comparePlayers); 
     }
-    playas.sort(comparePlayers); 
-    return playas[0];
+    let plaaaayas = [];
+    for(let i=0; i<playas.length; i++){
+      plaaaayas.push(playas[i][0]);
+    } 
+    return plaaaayas;
   }
 
   //Prints out all info
@@ -481,6 +512,15 @@ function App() {
         console.log("Player", game.activePlayers[turn].id+1, "doesn't have enough money to raise. will CALL instead.");
         call();
     }else{
+    for(let i=0; i<game.activePlayers.length; i++){
+      if(game.activePlayers[i].allIn === true && game.activePlayers[i].sidePotChecked === false){
+        game.activePlayers[i].sidePotChecked = true;
+        game.sidePot.push(money-game.pot);
+        break;
+        //side pot created, check who is eligible for it player b creates side pot, player c rsaises beyond side pot, player a check bc he went all in, 
+      }
+    }
+    game.activePlayers[turn].totalMoneyIn += money;
     game.activePlayers[turn].playerMoney -= (betAmount - game.activePlayers[turn].moneyIn);
     game.pot += betAmount - game.activePlayers[turn].moneyIn;
     game.activePlayers[turn].moneyIn = betAmount;
@@ -492,7 +532,8 @@ function App() {
   function call() { 
     //Check if they have enough money
     if(game.activePlayers[turn].playerMoney - (game.currentBet - game.activePlayers[turn].moneyIn) < 0){
-      game.activePlayers[turn].allIn();
+      game.activePlayers[turn].goAllIn(game);
+      nextTurn();
     }else{
       console.log("Player", game.activePlayers[turn].id + 1, "has 'called'");
       game.activePlayers[turn].turn="call";
@@ -510,10 +551,26 @@ function App() {
           if (player.playerMoney >= callAmount) {
               player.playerMoney -= callAmount;
               player.moneyIn += callAmount;
-              game.pot += callAmount;
+              player.totalMoneyIn += callAmount;
+              if(game.sidePot.length>0){
+                game.pot += game.pot;
+                callAmount-= game.pot;
+                for(let i=0;i<game.sidePot.length; i++){
+                  if(i===game.sidePot.length-1){
+                    game.sidePot[i]+=callAmount;
+                  }
+                  else{
+                    game.sidePot[i]+=game.sidePot[i];
+                    callAmount-=game.sidePot[i];
+                  }
+                }
+              }
+              else{
+                game.pot += callAmount;
+              }
           } else {
-              console.log("Player", player.id + 1, "does not have enough money to call.");
-              player.allIn();
+              console.log("Player", player.id + 1, "does not have enough money to call ALL IN instead.");
+              player.goAllIn(game);
           }
       } else {
           console.log("Player", player.id + 1, "is already at the highest bet.");
