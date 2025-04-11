@@ -51,6 +51,7 @@ class Player {
     this.allIn = false;
     this.sidePotChecked = false;
     this.totalMoneyIn = 0;
+    this.tempMoneyIn = 0;
   }
   //creates "full hand" w/ community cards
   createHand(communityCards){ 
@@ -155,34 +156,14 @@ class Player {
 
   goAllIn(game){
     this.allIn = true;
-    if(game.sidePot.length>0){
-      game.pot += game.pot;
-      this.playerMoney-= game.pot;
-      for(let i=0;i<game.sidePot.length; i++){
-        if(i===game.sidePot.length-1){
-          game.sidePot[i]+=this.playerMoney;
-        }
-        else{
-          game.sidePot[i]+=game.sidePot[i];
-          this.playerMoney-=game.sidePot[i];
-        }
-      }
-    }
-    else{
-      game.pot += this.playerMoney;
-    }
+    let tempMoney = this.playerMoney;
+    game.pot += tempMoney;
     this.moneyIn += this.playerMoney;
     this.totalMoneyIn += this.playerMoney;
     this.playerMoney = 0;
   }
 }
-class Bot extends Player{
-  constructor(botID) {
-    this.botID=botID; //Assign a different ID to the bot than the player to prevent interference with turns
-  }
 
-
-}
 class Game {
   constructor() {
     this.players = 0;
@@ -202,6 +183,7 @@ class Game {
     this.activePlayers = [];
     this.sidePotPlayers = [];
     this.sidePot = [];
+    this.potDictionary = {};
     this.redoTurn=-999;
   }
   //Initializes game by setting values
@@ -236,6 +218,7 @@ class Game {
       this.pot = 0;
       this.winner = 0;
     }
+    this.potDictionary = {};
     this.deck = new Deck(); // Deck is reset
     this.deck.shuffle(); // Cards reshuffled
     this.boardCards = [] //Board Cards Set to NADA
@@ -310,6 +293,10 @@ class Game {
           this.pot += this.big;
         }
 
+        //Adding to totalMoneyIn
+        this.activePlayers[i].totalMoneyIn += this.activePlayers[i].moneyIn;
+        this.activePlayers[playerWithBigBlind].totalMoneyIn += this.activePlayers[playerWithBigBlind].moneyIn;
+
         //I'm starting the turn from the person after the big blind.
         this.redoTurn = (i + 2) % this.activePlayers.length;
         break;
@@ -322,9 +309,50 @@ class Game {
     this.print()
   }
   //Moves on round, creates community cards, gets the winner, resets current bet/money In if round isn't first round
-  nextRound() {
+  nextRound() { //https://miro.com/online-whiteboard/board/uXjVIG8CmjI=/?boardAccessToken=MXL3uV31rzcn4beKQ0Oww5n64SYXOz57 
     this.round+=1;
     this.redoTurn=-999;
+
+
+    //First, let's assign player.tempMoneyIn
+    this.potDictionary = {};
+    for(let i=0; i<this.activePlayers.length;i++){
+      this.activePlayers[i].tempMoneyIn = this.activePlayers[i].totalMoneyIn 
+    }
+    //This conditional will be reset every time an iteration is run. it'll ensure that there's at least one player that still has money.
+    let sum=0; this.activePlayers.forEach((player) => {if(!player.folded) sum+=player.tempMoneyIn});
+    while(sum > 0){
+      //Second, find the lowest totalMoneyIn of the active players
+      let minMoneyIn = 999999;
+      for(let i=0; i<this.activePlayers.length; i++){
+        if (this.activePlayers[i].tempMoneyIn !== 0 && !this.activePlayers[i].folded){ minMoneyIn = this.activePlayers[i].tempMoneyIn;}
+      }
+      for(let i=0; i<this.activePlayers.length; i++){
+        if (this.activePlayers[i].tempMoneyIn > 0 && !this.activePlayers[i].folded){
+          minMoneyIn = Math.min(this.activePlayers[i].tempMoneyIn, minMoneyIn)
+        }
+      }
+      let tempSidePot = 0
+      let listOfPlayers = []
+      for(let i=0; i<this.activePlayers.length; i++){
+        //The conditional will check if the player even can put money in. If they can, it'll subtract the minimum and add them to the list of ppl who can claim this.
+        if(this.activePlayers[i].tempMoneyIn > 0 && !this.activePlayers[i].folded){ //this'll subtract the minimum amount of money somoene has put in from the total amt of money this specific player has put in.
+          this.activePlayers[i].tempMoneyIn -= minMoneyIn;
+          tempSidePot += minMoneyIn; 
+          listOfPlayers.push(this.activePlayers[i]);
+        }
+      }
+      this.potDictionary[listOfPlayers] = tempSidePot;
+      console.log("It got to here");
+      console.log(this.activePlayers);
+      sum=0; this.activePlayers.forEach((player) => {if(!player.folded) sum+=player.tempMoneyIn});
+    }
+    
+    console.log(this.potDictionary);
+
+
+
+    //Handles the events of the round 
     if(this.round === 1){
       this.currentBet=this.big;
     }else{
@@ -348,54 +376,45 @@ class Game {
         this.activePlayers[i].moneyIn=0;
         this.activePlayers[i].turn = "";
       }
-      if (this.round === 4){
+      if (this.round === 4){ //we need to go through potDictionary 
         this.winner = this.determineRanking();
       }
     }
     this.print()
   }
-  //Finds the winner by ranking hands, then card values, then suits.
-  determineRanking() {
+  //Finds the winners by ranking hands, then card values, then suits.
+  determineRanking(playerList = this.activePlayers) {
     function comparePlayers(playerA, playerB) {
-        let handRanking = ["high card", "pair", "two pair", "three of a kind", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"];
-        // First Test: Compare Hand Types
-        let rankA = handRanking.indexOf(playerA.handType);
-        let rankB = handRanking.indexOf(playerB.handType);
-        if (rankA !== rankB) return rankB - rankA; // Reverse order so highest rank is first
-        //Second Test: Compare Highest Valued Card
-        let maxValA = Math.max((playerA.playerHand[0].value === 1 ? 14 : playerA.playerHand[0].value), (playerA.playerHand[1].value === 1 ? 14 : playerA.playerHand[1].value)); 
-        let maxValB = Math.max((playerB.playerHand[0].value === 1 ? 14 : playerB.playerHand[0].value), (playerB.playerHand[1].value === 1 ? 14 : playerB.playerHand[1].value)); 
-        if(maxValA !== maxValB) return maxValB - maxValA;
-        // Third Test: Compare Suits(spades > hearts > diamonds > clubs)
-        const suitRank = { clubs: 1, diamonds: 2, hearts: 3, spades: 4 };
-        if(playerA.playerHand[0].value > playerA.playerHand[1].value){ maxValA = suitRank[playerA.playerHand[0].suit];}else{ maxValA = suitRank[playerA.playerHand[1].suit];}
-        if(playerB.playerHand[0].value > playerB.playerHand[1].value){ maxValB = suitRank[playerB.playerHand[0].suit];}else{ maxValB = suitRank[playerB.playerHand[1].suit];}
-        if (maxValA !== maxValB) {
-          return maxValB - maxValA;
-        }
-        //FINAL Test: Sum Total Card Values
-        let valueA = playerA.fullHand.reduce((sum, card) => sum + (card.value === 1 ? 14 : card.value), 0);
-        let valueB = playerB.fullHand.reduce((sum, card) => sum + (card.value === 1 ? 14 : card.value), 0);
-        if (valueA !== valueB) {
-            return valueB - valueA; // Higher card sum wins
-        }
-        return 0; 
-    }
-    let playas = [[]];
-    for(let x=0; x<this.sidePot.length; x++){
-      for (let i=0; i<this.activePlayers.length; i++){
-        if(this.activePlayers[i].totalMoneyIn >= this.sidePot[i]){
-          this.activePlayers[i].totalMoneyIn-=this.sidePot[i];
-          if (!this.activePlayers[i].folded) playas[x].push(this.activePlayers[i]);
-        }
+      let handRanking = ["high card", "pair", "two pair", "three of a kind", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"];
+      // First Test: Compare Hand Types
+      let rankA = handRanking.indexOf(playerA.handType);
+      let rankB = handRanking.indexOf(playerB.handType);
+      if (rankA !== rankB) return rankB - rankA; // Reverse order so highest rank is first
+      //Second Test: Compare Highest Valued Card
+      let maxValA = Math.max((playerA.playerHand[0].value === 1 ? 14 : playerA.playerHand[0].value), (playerA.playerHand[1].value === 1 ? 14 : playerA.playerHand[1].value)); 
+      let maxValB = Math.max((playerB.playerHand[0].value === 1 ? 14 : playerB.playerHand[0].value), (playerB.playerHand[1].value === 1 ? 14 : playerB.playerHand[1].value)); 
+      if(maxValA !== maxValB) return maxValB - maxValA;
+      // Third Test: Compare Suits(spades > hearts > diamonds > clubs)
+      const suitRank = { clubs: 1, diamonds: 2, hearts: 3, spades: 4 };
+      if(playerA.playerHand[0].value > playerA.playerHand[1].value){ maxValA = suitRank[playerA.playerHand[0].suit];}else{ maxValA = suitRank[playerA.playerHand[1].suit];}
+      if(playerB.playerHand[0].value > playerB.playerHand[1].value){ maxValB = suitRank[playerB.playerHand[0].suit];}else{ maxValB = suitRank[playerB.playerHand[1].suit];}
+      if (maxValA !== maxValB) {
+        return maxValB - maxValA;
       }
-      playas[x].sort(comparePlayers); 
+      //FINAL Test: Sum Total Card Values
+      let valueA = playerA.fullHand.reduce((sum, card) => sum + (card.value === 1 ? 14 : card.value), 0);
+      let valueB = playerB.fullHand.reduce((sum, card) => sum + (card.value === 1 ? 14 : card.value), 0);
+      if (valueA !== valueB) {
+          return valueB - valueA; // Higher card sum wins
+      }
+      return 0; 
     }
-    let plaaaayas = [];
-    for(let i=0; i<playas.length; i++){
-      plaaaayas.push(playas[i][0]);
-    } 
-    return plaaaayas;
+    let playas = [];
+
+    for(let i=0; i<playerList.length; i++){
+      if(!playerList[i].folded) playas.push(playerList[i]);
+    }
+    return playas.sort(comparePlayers)[0];
   }
 
   //Prints out all info
@@ -474,7 +493,7 @@ function App() {
     while (tempTurn + i < game.activePlayers.length || game.redoTurn > 0) {
       if(tempTurn+i >= game.activePlayers.length){console.log("Resetting Iteration 'Till Player ", game.redoTurn+1); tempTurn=0; i=0;} 
       if(tempTurn+i === game.redoTurn) {console.log("Last Player Who Raised has been Reached!!"); break;}
-      if (!game.activePlayers[tempTurn + i].folded) {
+      if (!game.activePlayers[tempTurn + i].folded && !game.activePlayers[tempTurn + i].allIn) {
         setTurn(tempTurn + i);
         return; 
       }
@@ -502,37 +521,38 @@ function App() {
     }
   }, [turn, time]); //Any changes to turn or time vars will make the aiMove() run again.
 
+
   // **ALL PLAYER/AI FUNCTIONS**
   function raise(money=game.big){ //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
     console.log("Player ",game.activePlayers[turn].id+1,"has 'raised'");
     game.activePlayers[turn].turn="raise";
     if(game.activePlayers[turn].id !== game.playerID) money=Math.floor(Math.random()*money+1);
+    console.log(turn);
+    console.log(game.activePlayers[turn].id)
+    console.log(money);
     let betAmount = game.currentBet + money; 
-    if (game.activePlayers[turn].playerMoney < betAmount) {
+    console.log(betAmount);
+    if (game.activePlayers[turn].playerMoney < betAmount - game.activePlayers[turn].moneyIn) {
         console.log("Player", game.activePlayers[turn].id+1, "doesn't have enough money to raise. will CALL instead.");
         call();
     }else{
-    for(let i=0; i<game.activePlayers.length; i++){
-      if(game.activePlayers[i].allIn === true && game.activePlayers[i].sidePotChecked === false){
-        game.activePlayers[i].sidePotChecked = true;
-        game.sidePot.push(money-game.pot);
-        break;
-        //side pot created, check who is eligible for it player b creates side pot, player c rsaises beyond side pot, player a check bc he went all in, 
-      }
-    }
-    game.activePlayers[turn].totalMoneyIn += money;
     game.activePlayers[turn].playerMoney -= (betAmount - game.activePlayers[turn].moneyIn);
     game.pot += betAmount - game.activePlayers[turn].moneyIn;
     game.activePlayers[turn].moneyIn = betAmount;
+    game.activePlayers[turn].totalMoneyIn += game.activePlayers[turn].moneyIn;
     game.currentBet = betAmount;
-    console.log("Raise Amount: ", game.currentBet);
     game.redoTurn = turn;
     nextTurn();
-  }}
+    }
+  }
   function call() { 
     //Check if they have enough money
     if(game.activePlayers[turn].playerMoney - (game.currentBet - game.activePlayers[turn].moneyIn) < 0){
+      console.log("Player", game.activePlayers[turn].id + 1, "does not have enough money to call ALL IN instead.");
       game.activePlayers[turn].goAllIn(game);
+      console.log(turn);
+      console.log(game.activePlayers[turn].id)
+      console.log(game.activePlayers[turn].allIn)
       nextTurn();
     }else{
       console.log("Player", game.activePlayers[turn].id + 1, "has 'called'");
@@ -541,7 +561,7 @@ function App() {
       let highestBet = 0;
       for (let player of game.activePlayers) {
           if (!player.folded) {
-              highestBet = Math.max(highestBet, player.moneyIn);
+            highestBet = Math.max(highestBet, player.moneyIn);
           }
       }
       let player = game.activePlayers[turn];
@@ -550,6 +570,7 @@ function App() {
       if (callAmount > 0) {
           if (player.playerMoney >= callAmount) {
               player.playerMoney -= callAmount;
+              //Adding to totalMoneyIn
               player.moneyIn += callAmount;
               player.totalMoneyIn += callAmount;
               if(game.sidePot.length>0){
@@ -563,6 +584,7 @@ function App() {
                     game.sidePot[i]+=game.sidePot[i];
                     callAmount-=game.sidePot[i];
                   }
+                  if(!(game.activePlayers[turn].id in game.sidePotPlayers[i])) game.sidePotPlayers[i].push(game.activePlayers[turn].id);
                 }
               }
               else{
@@ -579,7 +601,7 @@ function App() {
       nextTurn();
   }
   }
-  function check(){ //MUST BE IMPLEMENTED!
+  function check(){ 
     console.log("Player ",game.activePlayers[turn].id+1,"has 'checked'");
     game.activePlayers[turn].turn="check";
     nextTurn();
@@ -591,6 +613,8 @@ function App() {
     //CHECKING IF OTHER PPL FOLDED
     const activePlayers = game.activePlayers.filter(player => !player.folded);
     if (activePlayers.length === 1) {
+        console.log("Active Players: HAHAHA")
+        console.log(activePlayers);
         game.winner = activePlayers[0];
         game.round = 4; 
         setRound(game.round)
