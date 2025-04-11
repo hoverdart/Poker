@@ -45,19 +45,18 @@ const GameDisplay = (props) => {
 
       <div className="mb-3 fs-4">
       <span><strong>Current Pot: <span className="text-success">${props.game.round !== 1 ? Object.values(props.game.potDictionary)[0] : props.game.pot}</span></strong></span>{props.game.round !== 1 && Object.values(props.game.potDictionary).map((value, id) => id === 0 ? null : <span key={id}><strong> | Sidepot #{id}: <span className="text-success">${value}</span></strong></span>)}
-      <span><strong>| Current Bet: <span className="text-success">${props.game.currentBet} </span></strong></span>
+      <span><strong> | Current Bet: <span className="text-success">${props.game.currentBet} </span></strong></span>
       </div>
       {/* Players Section */}
       <div className="row">
         {props.game.allPlayers.map((player) => (
-          <div key={player.id} className="col-md-6 my-2">
-            <div className={`card mb-3 h-100 rounded-3 ${props.game.winner.id === player.id ? "bg-body-secondary" : player.id === props.game.activePlayers[props.turn].id && props.game.round !== 4 && !props.nextR ? "border border-5 border-info" : (player.folded || player.isSpectating) ? " border border-3 border-danger" : player.turn==="raise" ? "border border-3 border-success" : player.turn === "call" && "border border-3 border-warning"}`} style={player.isSpectating ? {backgroundColor:"rgb(219, 175, 175)"}:{}}>
+          <div key={player.id} className="col-md-6 my-2"> {/*Since the winner code is broken, I won't display the winners till it works; {props.game.winner.id === player.id ? "bg-body-secondary" :} */}
+            <div className={`card mb-3 h-100 rounded-3 ${ player.allIn ? "border border-5 border-primary" : player.id === props.game.activePlayers[props.turn].id && props.game.round !== 4 && !props.nextR ? "border border-5 border-info" : (player.folded || player.isSpectating) ? " border border-3 border-danger" : player.turn==="raise" ? "border border-3 border-success" : player.turn === "call" && "border border-3 border-warning"}`} style={player.isSpectating ? {backgroundColor:"rgb(219, 175, 175)"}:{}}>
               <div className="card-body">
                 <h5 className="card-title"><strong>Player {player.id + 1} {player.id === props.game.playerID && "(You)"}</strong></h5>
                 <p className="card-text"><strong>Money:</strong> ${player.playerMoney}</p>
                 <p className="card-text"><strong>Money In:</strong> ${player.moneyIn}</p>
                 <p className="card-text"><strong>TOTAL Money In:</strong> ${player.totalMoneyIn}</p>
-                <p className="card-text"><strong>All In?</strong> {player.allIn ? "True" : "False"}</p>
                 <p className="card-text">
                   <strong>Hand:</strong>{" "}
                   {player.id !== props.game.playerID && props.round !== 4 ? "???" : 

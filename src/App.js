@@ -349,9 +349,6 @@ class Game {
     }
     
     console.log(this.potDictionary);
-
-
-
     //Handles the events of the round 
     if(this.round === 1){
       this.currentBet=this.big;
@@ -416,13 +413,95 @@ class Game {
     }
     return playas.sort(comparePlayers)[0];
   }
-
+  //Runs a Simulation of the Game with Varying Difficulties, Finds Winning Probability
+  runSimulation(bot, difficulty=2, trials=5000){
+    function deepCopy(obj) {
+      if (typeof obj !== "object" || obj === null) {
+        return obj; // Return primitive values or null directly
+      }
+      let newObj = Array.isArray(obj) ? [] : Object.create(Object.getPrototypeOf(obj));
+      for (let key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          newObj[key] = typeof obj[key] === 'function' ? obj[key] : deepCopy(obj[key]);
+        }
+      }
+      return newObj;
+    }
+    let winCt = 0;
+    for(let i=0; i<trials; i++){
+      //define variables
+      let tempDeck = deepCopy(this.deck);
+      tempDeck.shuffle();
+      let tempCards = [];
+      let tempPlayers = [];
+      //Assign temp players as player objects
+      for(let i=0; i<this.activePlayers.length; i++){
+        tempPlayers[i] = new Player(i); //this ensures that the temp player's IDs are always larger than the possible IDs in the game
+      }
+      if(difficulty === 4){ //IMPOSSIBLE MODE: one trial needed, as the cards are EXACTLY the same.
+        trials = 1;
+        tempCards = [...this.boardCards]; //copies board cards
+        tempDeck = deepCopy(this.deck);
+        while(tempCards.length !== 5){
+          //tempDeck.fullDeck.shift() //burns card
+          tempCards.push(tempDeck.fullDeck.splice(0, 1)[0]); //adds THE EXACT CARDS, AS THEY APPEAR IN REAL GAME
+        }
+        for(let i=0; i<tempPlayers.length; i++){ //assigns cards to playas
+          tempPlayers[i].playerHand = [...this.activePlayers[i].playerHand]; //should be same hands
+        }
+        tempCards = [...this.boardCards];
+        while(tempCards.length !== 5){
+          tempCards.push(tempDeck.fullDeck.splice(0, 1)[0]); //adds one card till full community cards
+        }
+        for(let i=0; i<tempPlayers.length; i++){ //assigns cards to playas
+          tempPlayers[i].playerHand = [...this.activePlayers[i].playerHand]; //should be same hands
+        }
+      }else if(difficulty === 3){ //Hard Mode: Player Hands are the Same in Each Trial
+        while(tempCards.length !== 5){
+          tempCards.push(tempDeck.fullDeck.splice(Math.floor(Math.random() * tempDeck.fullDeck.length), 1)[0]); //adds one RANDOM card till full community cards
+        }
+        for(let i=0; i<tempPlayers.length; i++){ //assigns cards to playas
+          tempPlayers[i].playerHand = [...this.activePlayers[i].playerHand]; //should be same hands
+        }
+      }else if(difficulty === 2){ //Medium Mode: All Cards Randomized in Each Trial
+        while(tempCards.length !== 5){
+          tempCards.push(tempDeck.fullDeck.splice(Math.floor(Math.random() * tempDeck.fullDeck.length), 1)[0]); //adds one RANDOM card till full community cards
+        }
+        for(let i=0; i<tempPlayers.length; i++){ //assigns cards to playas
+          if (i !== bot.id){
+            tempPlayers[i].playerHand.push(tempDeck.fullDeck.splice(Math.floor(Math.random() * tempDeck.fullDeck.length), 1)[0]);
+            tempPlayers[i].playerHand.push(tempDeck.fullDeck.splice(Math.floor(Math.random() * tempDeck.fullDeck.length), 1)[0]); 
+          }else{
+            tempPlayers[i].playerHand = [...this.activePlayers[i].playerHand]; //should be same hand for bot
+          }
+          
+        }
+      }else{ //Easy Mode: Returns Random Percentages
+        return ((Math.random() * 150 - 50)/100).toFixed(2); //ranges from -20 to 99
+      }
+      let testThesePlayers = []; //Removes all folded players.
+      for(let i=0; i<tempPlayers.length; i++){
+        if (!this.activePlayers[i].folded){
+          tempPlayers[i].createHand(tempCards);
+          tempPlayers[i].type();
+          testThesePlayers.push(tempPlayers[i]);
+        }
+      }
+      if (this.determineRanking(testThesePlayers).id === bot.id){
+        winCt+=1;
+      }
+    }
+    return +((winCt * 1.0)/trials).toFixed(2);
+  }
+  findProbability(bot){ //This will return a percentage of profitability, comparing the amount that the player has called in total to the pot size. 
+    // OR: Compare the highest call with the pot size.
+    let potOdds = this.currentBet/(this.pot + this.currentBet); //if win probability > pot odds, it's worth it to call. Otherwise, fold.
+  }
   //Prints out all info
   print() {
     console.log("Players Info:", this.activePlayers);
     console.log("Community Cards: ",this.boardCards);
     console.log("Pot: ",this.pot);
-  
   }
 }
 
@@ -453,8 +532,8 @@ function App() {
       setGame(game);
       setRound(game.round);
       changeNextR(false);
-      for(let i=0; i<game.activePlayers.length; i++){
-        if(!game.activePlayers[i].folded){ setTurn(i); break;}
+      for(let i=0; i<game.activePlayers.length; i++){ //sets the turn to the next player who hasn't gone all in or folded.
+        if(!game.activePlayers[i].folded && !game.activePlayers[i].allIn){ setTurn(i); break;}
       }
       toGo(time+1);
     }
@@ -502,17 +581,33 @@ function App() {
     changeNextR(true);
   };
   //Handles "AI" Moves (Random Choice between options)
-  const aiMove = () => {
+  const aiMove = () => { //general gameplay: if probability is less than 10, fold. less than 30, call, raise/call as many times as the probability is 5 greater.
     setTimeout(() => {
       let actions = ["raise","call", "fold", "check"];
       if(game.currentBet !== 0) actions[3] = "call";
       else actions[1] = "check";
-      const randomAction = actions[Math.floor(Math.random() * actions.length)];
-      if (randomAction === "raise") raise();
-      if (randomAction === "call") call();
-      if (randomAction === "check") check();
-      if (randomAction === "fold") fold();
-    }, 1000); 
+      let potOdds = (game.currentBet - game.activePlayers[turn].moneyIn)/(game.pot + game.currentBet - game.activePlayers[turn].moneyIn);
+      let winningProbability = game.runSimulation(game.activePlayers[turn], 3, 5000) //returns decimal value
+      let dynamicWinComparison= (game.round >= 3 ? 0.70 : game.round >= 2 ? 0.50 : 0.35) //changes depending on the round
+      console.log("Probability of Winning (Player ",turn+1,"): ", winningProbability * 100, "% | Pot Odds: ",potOdds*100,"%"); 
+      //Basic AI Code, Must Be Changed!!
+      if(winningProbability > potOdds){ //it's worth it to call or raise. One issue: potOdds is usually super super high at the beginning, and gets lower after ppl start calling. 
+        if(winningProbability >= dynamicWinComparison){ //random percentage, should raise! - change the percentage (0.35) each ROUND - 35, 50, 70?
+          let newPotOdds = potOdds;
+          let raiseAmt = 0;
+          while(winningProbability > newPotOdds){
+            if ((game.currentBet - game.activePlayers[turn].moneyIn + raiseAmt) < game.activePlayers[turn].playerMoney){
+              raiseAmt+=1;
+            }else{break;}
+            newPotOdds = (game.currentBet - game.activePlayers[turn].moneyIn + raiseAmt)/(game.pot + game.currentBet + raiseAmt  - game.activePlayers[turn].moneyIn);
+          }
+          raise(raiseAmt);
+        } else{call();}
+      }else{ //not worth it, so you should fold (this should be changed, as potOdds are always highest at the beginning)
+        if (winningProbability < 0.15) fold();
+        else call();
+      } 
+    }, 2); 
   };
   //Runs the aiMove() every time the turn switches/the round starts/the game starts till rounds end
   useEffect(() => {
