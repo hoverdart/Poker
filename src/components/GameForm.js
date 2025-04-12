@@ -4,15 +4,15 @@ const GameForm = (props) => {
     //Important States for the GameForm values
     const [playerCount, setPlayerCount] = useState(2);
     const [smallAmt, setSmall] = useState();
-    const [largeAmt, setLarge] = useState();
+    const [aiDifficulty, setDifficulty] = useState(2);
     const [money, setMoney] = useState();
 
     // Submit function for the form
     function submit(){
-        props.onSubmit(playerCount,smallAmt,largeAmt,money);
+        props.onSubmit(playerCount,smallAmt,aiDifficulty,money);
     }
     //Checks if the form is ready to submit or not, and undisables the button if it is.
-    const isFormValid = playerCount >= 2 && smallAmt > 0 && largeAmt > 0 && money > 0 && largeAmt < money;
+    const isFormValid = playerCount >= 2 && smallAmt > 0 && money > 0 && (smallAmt*2) <= money;
     return (
         <div className="container-sm p-4 rounded shadow bg-light">
             <h3 className="mb-4 text-center"><strong>Set Up The Game</strong></h3>
@@ -29,17 +29,6 @@ const GameForm = (props) => {
                         <input type="number" className="form-control" id="smallBlind" placeholder="Enter amount" value={smallAmt} onChange={(e)=> {setSmall(e.target.valueAsNumber)}}/>
                     </div>
                     {smallAmt <= 0 && <div className="text-danger fw-bold">⚠ Must be greater than $0.</div>}
-                    {largeAmt < smallAmt && <div className="text-danger fw-bold">⚠ Small Blind Must Be Smaller than the Large Blind.</div>}
-                </div>
-            
-                <div className="col mb-2">
-                    <label htmlFor="largeBlind" className="form-label fw-bold">Large Blind</label>
-                    <div className="input-group">
-                        <span className="input-group-text">$</span>
-                        <input type="number" className="form-control" id="largeBlind" placeholder="Enter amount" value={largeAmt} onChange={(e)=> {setLarge(e.target.valueAsNumber)}} />
-                    </div>
-                    {largeAmt <= 0 && <div className="text-danger">⚠ Must be greater than $0.</div>}
-                    {largeAmt < smallAmt && <div className="text-danger">⚠ Large Blind Must Be Larger than the Small Blind.</div>}
                 </div>
 
                 <div className="col mb-2">
@@ -48,8 +37,23 @@ const GameForm = (props) => {
                         <span className="input-group-text">$</span>
                         <input type="number" className="form-control" id="startingMoney" placeholder="Enter amount" value={money} onChange={(e)=> {setMoney(e.target.valueAsNumber)}}/>
                     </div>
-                    {money <= 0 && <div className="text-danger fw-bold">⚠ Must be greater than $0.</div>} {money < largeAmt && <div className="text-danger fw-bold">⚠ Must be greater than the large bid.</div>}
+                    {money <= 0 && <div className="text-danger fw-bold">⚠ Must be greater than $0.</div>} {money < (smallAmt * 2) && <div className="text-danger fw-bold">⚠ Must be greater than the large blind.</div>}
                 </div>
+
+                <div className="col mb-2">
+                <label htmlFor="aiDifficulty" className="form-label fw-bold">Set AI Difficulty</label>
+                    <div className="input-group">
+                        <select className="form-select" aria-label="Selecting AI Difficulty" value={aiDifficulty} onChange={(e) => setDifficulty(e.target.value)}>
+                            <option value={1}>Easy</option>
+                            <option value={2} selected>Medium</option>
+                            <option value={3} >Hard</option>
+                            <option value={4}>Impossible</option>
+                        </select>
+                    </div>
+                </div>
+
+
+
             </div>
 
             <div className="text-center">
