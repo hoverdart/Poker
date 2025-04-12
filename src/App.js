@@ -185,13 +185,15 @@ class Game {
     this.sidePot = [];
     this.allPots = [];
     this.eligiblePlayers = [];
+    this.aiDifficulty = 1;
     this.redoTurn = -999;
   }
   //Initializes game by setting values
-  start(players, small, big, startingMoney) {
+  start(players, small, big, aiDifficulty, startingMoney) {
     this.players = players;
     this.small = small;
     this.big = big;
+    this.aiDifficulty = aiDifficulty;
     this.startingMoney = startingMoney;
     this.deck.shuffle();
     for (let i = 0; i < this.players; i++) {
@@ -523,9 +525,9 @@ function App() {
 
   // **IMPORTANT FUNCTIONS FOR GAME HANDLING **
   //Handles GameForm input, initializes new Game object, starts game
-  function initializeValues(playerCt, smallAmt, largeAmt, money) {
+  function initializeValues(playerCt, smallAmt, aiDifficulty, money) {
     const newGame = new Game();
-    newGame.start(playerCt, smallAmt, largeAmt, money);
+    newGame.start(playerCt, smallAmt, smallAmt*2, aiDifficulty, money);
     setGame(newGame);
     setGameNum(1);
     setRound(1);
@@ -593,10 +595,10 @@ function App() {
       let actions = ["raise", "call", "fold", "check"];
       if (game.currentBet !== 0) actions[3] = "call";
       else actions[1] = "check";
-      let potOdds = (game.currentBet - game.activePlayers[turn].moneyIn) / (game.pot + game.currentBet - game.activePlayers[turn].moneyIn);
-      let winningProbability = game.runSimulation(game.activePlayers[turn], 3, 5000) //returns decimal value
-      let dynamicWinComparison = (game.round >= 3 ? 0.70 : game.round >= 2 ? 0.50 : 0.35) //changes depending on the round
-      console.log("Probability of Winning (Player ", turn + 1, "): ", winningProbability * 100, "% | Pot Odds: ", potOdds * 100, "%");
+      let potOdds = (game.currentBet - game.activePlayers[turn].moneyIn)/(game.pot + game.currentBet - game.activePlayers[turn].moneyIn);
+      let winningProbability = game.runSimulation(game.activePlayers[turn], game.aiDifficulty, 5000) //returns decimal value
+      let dynamicWinComparison= (game.round >= 3 ? 0.70 : game.round >= 2 ? 0.50 : 0.35) //changes depending on the round
+      console.log("Probability of Winning (Player ",turn+1,"): ", winningProbability * 100, "% | Pot Odds: ",potOdds*100,"%"); 
       //Basic AI Code, Must Be Changed!!
       if (winningProbability > potOdds) { //it's worth it to call or raise. One issue: potOdds is usually super super high at the beginning, and gets lower after ppl start calling. 
         if (winningProbability >= dynamicWinComparison) { //random percentage, should raise! - change the percentage (0.35) each ROUND - 35, 50, 70?
