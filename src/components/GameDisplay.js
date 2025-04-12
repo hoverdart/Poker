@@ -44,7 +44,7 @@ const GameDisplay = (props) => {
       </div>
 
       <div className="mb-3 fs-4">
-      <span><strong>Current Pot: <span className="text-success">${props.game.round !== 1 ? Object.values(props.game.potDictionary)[0] : props.game.pot}</span></strong></span>{props.game.round !== 1 && Object.values(props.game.potDictionary).map((value, id) => id === 0 ? null : <span key={id}><strong> | Sidepot #{id}: <span className="text-success">${value}</span></strong></span>)}
+      <span><strong>Current Pot: <span className="text-success">${props.game.round !== 1 ? props.game.allPots[0] : props.game.pot}</span></strong></span>{props.game.round !== 1 && props.game.allPots.map((value, id) => id === 0 ? null : <span key={id}><strong> | Sidepot #{id}: <span className="text-success">${value}</span></strong></span>)}
       <span><strong> | Current Bet: <span className="text-success">${props.game.currentBet} </span></strong></span>
       </div>
       {/* Players Section */}
@@ -122,7 +122,8 @@ const GameDisplay = (props) => {
 
       {/* Game Control Buttons */}
       {props.game.round === 4 ? (
-        <p className="mt-3 fs-3"><strong>Player {props.game.winner.id + 1} Wins!</strong></p>) : null}
+        props.game.winner.map((eachPlayer, id) => <p className="mt-3 fs-3" id={id}><strong>{`Player ${eachPlayer.id + 1} Wins ${id === 0 ? "The Main Pot" : `Side Pot #${id}`}!`}</strong></p> )
+        ) : null}
       <button className={`btn mt-3 mx-2 ${props.game.round === 4 ? "btn-danger" : "btn-primary"} ${(!props.nextR && props.game.round!==4) && " disabled"}`} onClick={props.game.round === 4 ? props.handleNextGame : props.handleNextRound}>
         {props.game.round === 4 ? "Next Game" : "Next Round"}
       </button>

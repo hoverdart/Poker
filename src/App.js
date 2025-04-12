@@ -719,7 +719,7 @@ function App() {
     if (activePlayers.length === 1) {
       console.log("Active Players: HAHAHA")
       console.log(activePlayers);
-      game.winner = activePlayers[0];
+      game.winner = [activePlayers[0]];
       game.round = 4;
       setRound(game.round)
       console.log(`Player ${game.winner.id + 1} wins because every other idiot folded!`);
