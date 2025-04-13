@@ -11,7 +11,7 @@ const GameDisplay = (props) => {
   return (
     <div className="container mt-4 p-4 bg-light shadow-lg rounded">
       <h2 className="mb-3">
-        <strong>Game {props.gameNum}</strong>: Round {props.round}
+        <strong>Game {props.gameNum}: </strong>{props.round !== 5 ? `Round ${props.round}`: "Final Round"}
       </h2>
 
       {/* Game Information Table */}
@@ -51,7 +51,7 @@ const GameDisplay = (props) => {
       <div className="row">
         {props.game.allPlayers.map((player) => (
           <div key={player.id} className="col-md-6 my-2"> {/*Since the winner code is broken, I won't display the winners till it works; {props.game.winner.id === player.id ? "bg-body-secondary" :} */}
-            <div className={`card mb-3 h-100 rounded-3 ${ player.isWinner ? "bg-body-secondary" : player.allIn ? "border border-5 border-primary" : player.id === props.game.activePlayers[props.turn].id && props.game.round !== 4 && !props.nextR ? "border border-5 border-info" : (player.folded || player.isSpectating) ? " border border-3 border-danger" : player.turn==="raise" ? "border border-3 border-success" : player.turn === "call" && "border border-3 border-warning"}`} style={player.isSpectating ? {backgroundColor:"rgb(219, 175, 175)"}:{}}>
+            <div className={`card mb-3 h-100 rounded-3 ${ player.isWinner ? "bg-body-secondary" : player.allIn ? "border border-5 border-primary" : player.id === props.game.activePlayers[props.turn].id && props.game.round !== 5 && !props.nextR ? "border border-5 border-info" : (player.folded || player.isSpectating) ? " border border-3 border-danger" : player.turn==="raise" ? "border border-3 border-success" : player.turn === "call" && "border border-3 border-warning"}`} style={player.isSpectating ? {backgroundColor:"rgb(219, 175, 175)"}:{}}>
               <div className="card-body">
                 <h5 className="card-title"><strong>Player {player.id + 1} {player.id === props.game.playerID && "(You)"}</strong></h5>
                 <p className="card-text"><strong>Money:</strong> ${player.playerMoney}</p>
@@ -59,21 +59,21 @@ const GameDisplay = (props) => {
                 <p className="card-text"><strong>TOTAL Money In:</strong> ${player.totalMoneyIn}</p>
                 <p className="card-text">
                   <strong>Hand:</strong>{" "}
-                  {player.id !== props.game.playerID && props.round !== 4 ? "???" : 
+                  {player.id !== props.game.playerID && props.round !== 5 ? "???" : 
                   player.playerHand.map((card, index) => (
                     <span key={index} className={`badge mx-1 ${card.symbol === "♦" || card.symbol === "♥" ? "bg-danger" : "bg-secondary"}`}>
                       {card.name} {card.symbol}
                     </span>))}
                 </p>
                 <p className="card-text">
-                  <strong>Hand Type:</strong> {player.id !== props.game.playerID && props.round !== 4 ? "???" : player.handType}
+                  <strong>Hand Type:</strong> {player.id !== props.game.playerID && props.round !== 5 ? "???" : player.handType}
                 </p>
-                {/* Player Actions - Disabled when not their turn/is round 4/time for next round*/}
+                {/* Player Actions - Disabled when not their turn/is round 5/time for next round*/}
                 {player.id === props.game.playerID && (
                   <div className="btn-group mt-2">
-                    <button className={`btn ${props.game.currentBet === 0 ? "btn-primary" : "btn-warning"} btn-sm px-2 me-2 ${(player.id !== props.game.activePlayers[props.turn].id || props.round === 4 || props.nextR ) && "disabled"}`} onClick={props.call}> {props.game.currentBet === 0 ? "Check" : "Call"}</button>
-                    <button className={`btn btn-success btn-sm px-2 me-2 ${(player.id !== props.game.activePlayers[props.turn].id || props.round === 4 || props.nextR || player.playerMoney === 0) && "disabled"}`} onClick={() => setShow(true)}>Raise</button>
-                    <button className={`btn btn-danger btn-sm px-2 me-2 ${(player.id !== props.game.activePlayers[props.turn].id || props.round === 4 || props.nextR) && "disabled"}`} onClick={props.fold}>Fold</button>
+                    <button className={`btn ${props.game.currentBet === 0 ? "btn-primary" : "btn-warning"} btn-sm px-2 me-2 ${(player.id !== props.game.activePlayers[props.turn].id || props.round === 5 || props.nextR ) && "disabled"}`} onClick={props.call}> {props.game.currentBet === 0 ? "Check" : "Call"}</button>
+                    <button className={`btn btn-success btn-sm px-2 me-2 ${(player.id !== props.game.activePlayers[props.turn].id || props.round === 5 || props.nextR || player.playerMoney === 0) && "disabled"}`} onClick={() => setShow(true)}>Raise</button>
+                    <button className={`btn btn-danger btn-sm px-2 me-2 ${(player.id !== props.game.activePlayers[props.turn].id || props.round === 5 || props.nextR) && "disabled"}`} onClick={props.fold}>Fold</button>
                   </div>
                 )}
 
@@ -121,11 +121,11 @@ const GameDisplay = (props) => {
       </div>
 
       {/* Game Control Buttons */}
-      {props.game.round === 4 ? (
+      {props.game.round === 5 ? (
         props.game.winner.map((eachPlayer, id) => <p className="mt-3 fs-3" id={id}><strong>{`Player ${eachPlayer.id + 1} Wins ${id === 0 ? "The Main Pot" : `Side Pot #${id}`}!`}</strong></p> )
         ) : null}
-      <button className={`btn mt-3 mx-2 ${props.game.round === 4 ? "btn-danger" : "btn-primary"} ${(!props.nextR && props.game.round!==4) && " disabled"}`} onClick={props.game.round === 4 ? props.handleNextGame : props.handleNextRound}>
-        {props.game.round === 4 ? "Next Game" : "Next Round"}
+      <button className={`btn mt-3 mx-2 ${props.game.round === 5 ? "btn-danger" : "btn-primary"} ${(!props.nextR && props.game.round!==5) && " disabled"}`} onClick={props.game.round === 5 ? props.handleNextGame : props.handleNextRound}>
+        {props.game.round === 5 ? "Next Game" : "Next Round"}
       </button>
     </div>
   );
