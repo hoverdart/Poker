@@ -51,7 +51,7 @@ const GameDisplay = (props) => {
       <div className="row">
         {props.game.allPlayers.map((player) => (
           <div key={player.id} className="col-md-6 my-2"> {/*Since the winner code is broken, I won't display the winners till it works; {props.game.winner.id === player.id ? "bg-body-secondary" :} */}
-            <div className={`card mb-3 h-100 rounded-3 ${ player.allIn ? "border border-5 border-primary" : player.id === props.game.activePlayers[props.turn].id && props.game.round !== 4 && !props.nextR ? "border border-5 border-info" : (player.folded || player.isSpectating) ? " border border-3 border-danger" : player.turn==="raise" ? "border border-3 border-success" : player.turn === "call" && "border border-3 border-warning"}`} style={player.isSpectating ? {backgroundColor:"rgb(219, 175, 175)"}:{}}>
+            <div className={`card mb-3 h-100 rounded-3 ${ player.isWinner ? "bg-body-secondary" : player.allIn ? "border border-5 border-primary" : player.id === props.game.activePlayers[props.turn].id && props.game.round !== 4 && !props.nextR ? "border border-5 border-info" : (player.folded || player.isSpectating) ? " border border-3 border-danger" : player.turn==="raise" ? "border border-3 border-success" : player.turn === "call" && "border border-3 border-warning"}`} style={player.isSpectating ? {backgroundColor:"rgb(219, 175, 175)"}:{}}>
               <div className="card-body">
                 <h5 className="card-title"><strong>Player {player.id + 1} {player.id === props.game.playerID && "(You)"}</strong></h5>
                 <p className="card-text"><strong>Money:</strong> ${player.playerMoney}</p>

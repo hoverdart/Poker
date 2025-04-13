@@ -49,6 +49,7 @@ class Player {
     this.turn = "";
     this.isSpectating = false;
     this.allIn = false;
+    this.isWinner=false;
     this.sidePotChecked = false;
     this.totalMoneyIn = 0;
     this.tempMoneyIn = 0;
@@ -216,6 +217,8 @@ class Game {
     this.redoTurn = -999;
 
     //Depositing money for the winnah
+    console.log(this.winner);
+    console.log(this.allPots);
     if (this.winner !== 0) {
       for(let i=0; i<this.allPots.length; i++){
         this.winner[i].playerMoney += this.allPots[i];
@@ -237,6 +240,7 @@ class Game {
       this.allPlayers[i].totalMoneyIn = 0;
       this.allPlayers[i].turn = "";
       this.allPlayers[i].allIn = false;
+      this.allPlayers[i].isWinner = false;
       this.allPlayers[i].sidePotChecked = false;
       if (this.allPlayers[i].playerMoney <= 0) {
         this.allPlayers[i].isSpectating = true;
@@ -314,11 +318,11 @@ class Game {
     this.print()
   }
   //Moves on round, creates community cards, gets the winner, resets current bet/money In if round isn't first round
-  nextRound() { //https://miro.com/online-whiteboard/board/uXjVIG8CmjI=/?boardAccessToken=MXL3uV31rzcn4beKQ0Oww5n64SYXOz57 
+  nextRound() { 
     this.round += 1;
     this.redoTurn = -999;
 
-
+    //**SIDE POT CREATION CODE STARTS HERE **
     //First, let's assign player.tempMoneyIn
     this.allPots=[];
     this.eligiblePlayers=[];
@@ -340,19 +344,21 @@ class Game {
       }
       let tempSidePot = 0
       let listOfPlayers = []
+      console.log(minMoneyIn)
       for (let i = 0; i < this.activePlayers.length; i++) {
         //The conditional will check if the player even can put money in. If they can, it'll subtract the minimum and add them to the list of ppl who can claim this.
-        if (this.activePlayers[i].tempMoneyIn > 0 && !this.activePlayers[i].folded) { //this'll subtract the minimum amount of money somoene has put in from the total amt of money this specific player has put in.
-          this.activePlayers[i].tempMoneyIn -= minMoneyIn;
-          tempSidePot += minMoneyIn;
-          listOfPlayers.push(this.activePlayers[i]);
+        if (this.activePlayers[i].tempMoneyIn > 0) { //this'll subtract the minimum amount of money somoene has put in from the total amt of money this specific player has put in.
+          const amountContributed = Math.min(this.activePlayers[i].tempMoneyIn, minMoneyIn);
+          this.activePlayers[i].tempMoneyIn -= amountContributed;
+          tempSidePot += amountContributed;
+          if(!this.activePlayers[i].folded) listOfPlayers.push(this.activePlayers[i]);
         }
       }
       this.allPots.push(tempSidePot);
       this.eligiblePlayers.push(listOfPlayers); //THE INDEX OF EACH CORRESPONDS TO THE OTHER (index of each element in allPots matches the index of each element in eligiblePlayers)
-      console.log("It got to here");
       sum = 0; this.activePlayers.forEach((player) => { if (!player.folded) sum += player.tempMoneyIn });
     }
+    // **SIDE POT CREATION CODE ENDS HERE **
 
     //Handles the events of the round 
     if (this.round === 1) {
@@ -382,6 +388,7 @@ class Game {
         this.winner = [];
         for(let i=0; i<this.eligiblePlayers.length; i++){
           this.winner.push(this.determineRanking(this.eligiblePlayers[i]));
+          this.winner[i].isWinner = true;
         }
         console.log(this.winner);
       }
@@ -510,7 +517,7 @@ class Game {
   print() {
     console.log("Players Info:", this.activePlayers);
     console.log("Community Cards: ", this.boardCards);
-    console.log("Pot: ", this.pot);
+    console.log(this);
   }
 }
 
@@ -631,19 +638,16 @@ function App() {
     console.log("Player ", game.activePlayers[turn].id + 1, "has 'raised'");
     game.activePlayers[turn].turn = "raise";
     if (game.activePlayers[turn].id !== game.playerID) money = Math.floor(Math.random() * money + 1);
-    console.log(turn);
-    console.log(game.activePlayers[turn].id)
-    console.log(money);
     let betAmount = game.currentBet + money;
-    console.log(betAmount);
     if (game.activePlayers[turn].playerMoney < betAmount - game.activePlayers[turn].moneyIn) {
       console.log("Player", game.activePlayers[turn].id + 1, "doesn't have enough money to raise. will CALL instead.");
       call();
     } else {
       game.activePlayers[turn].playerMoney -= (betAmount - game.activePlayers[turn].moneyIn);
-      game.pot += betAmount - game.activePlayers[turn].moneyIn;
+      game.activePlayers[turn].totalMoneyIn += (betAmount - game.activePlayers[turn].moneyIn);
       game.activePlayers[turn].moneyIn = betAmount;
-      game.activePlayers[turn].totalMoneyIn += game.activePlayers[turn].moneyIn;
+      game.pot += betAmount - game.activePlayers[turn].moneyIn;
+      
       game.currentBet = betAmount;
       game.redoTurn = turn;
       nextTurn();
@@ -652,11 +656,8 @@ function App() {
   function call() {
     //Check if they have enough money
     if (game.activePlayers[turn].playerMoney - (game.currentBet - game.activePlayers[turn].moneyIn) < 0) {
-      console.log("Player", game.activePlayers[turn].id + 1, "does not have enough money to call ALL IN instead.");
+      console.log("Player", game.activePlayers[turn].id + 1, "does not have enough money to call. ALL IN instead.");
       game.activePlayers[turn].goAllIn(game);
-      console.log(turn);
-      console.log(game.activePlayers[turn].id)
-      console.log(game.activePlayers[turn].allIn)
       nextTurn();
     } else {
       console.log("Player", game.activePlayers[turn].id + 1, "has 'called'");
@@ -677,29 +678,12 @@ function App() {
           //Adding to totalMoneyIn
           player.moneyIn += callAmount;
           player.totalMoneyIn += callAmount;
-          if (game.sidePot.length > 0) {
-            game.pot += game.pot;
-            callAmount -= game.pot;
-            for (let i = 0; i < game.sidePot.length; i++) {
-              if (i === game.sidePot.length - 1) {
-                game.sidePot[i] += callAmount;
-              }
-              else {
-                game.sidePot[i] += game.sidePot[i];
-                callAmount -= game.sidePot[i];
-              }
-              if (!(game.activePlayers[turn].id in game.sidePotPlayers[i])) game.sidePotPlayers[i].push(game.activePlayers[turn].id);
-            }
-          }
-          else {
-            game.pot += callAmount;
-          }
-        } else {
-          console.log("Player", player.id + 1, "does not have enough money to call ALL IN instead.");
-          player.goAllIn(game);
+
+          // RUN THE SIDE POT CREATION CODE HERE INSTEAD OF THE BELOW!!!
+          game.pot += callAmount;
         }
-      } else {
-        console.log("Player", player.id + 1, "is already at the highest bet.");
+      }else{
+        console.log("Player", player.id + 1, "is already at the highest bet/ has CHECKED.");
       }
       game.currentBet = highestBet;
       nextTurn();
@@ -714,14 +698,13 @@ function App() {
     console.log("Player ", game.activePlayers[turn].id + 1, "has 'folded'");
     game.activePlayers[turn].folded = true; // This renders them unable to play/be selected, and adds a red border to show it.
 
-    //CHECKING IF OTHER PPL FOLDED
-    const activePlayers = game.activePlayers.filter(player => !player.folded);
+    //CHECKING IF OTHER PPL FOLDED. SIMILAR CODE SHOULD BE ADDED TO THE ALL-IN PORTION. 
+    const activePlayers = game.activePlayers.filter(player => !player.folded && !player.allIn);
     if (activePlayers.length === 1) {
-      console.log("Active Players: HAHAHA")
-      console.log(activePlayers);
       game.winner = [activePlayers[0]];
+      activePlayers[0].isWinner=true;
       game.round = 4;
-      setRound(game.round)
+      setRound(game.round) //YOU GOTA ADD THE SIDE POT CREATION CODE HERE AS WELL!!! 
       console.log(`Player ${game.winner.id + 1} wins because every other idiot folded!`);
     } else {
       nextTurn();
