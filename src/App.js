@@ -690,9 +690,15 @@ function App() {
     //CHECKING IF OTHER PPL FOLDED. SIMILAR CODE SHOULD BE ADDED TO THE ALL-IN PORTION. 
     const activePlayers = game.activePlayers.filter(player => !player.folded && !player.allIn);
     if (activePlayers.length === 1) {
-      game.winner = game.determineRanking(game.activePlayers.filter(player => !player.folded));
-      for(let i=0; i<game.winner.length; i++){ game.winner[i].isWinner = true; console.log(`Player ${game.winner[i].id + 1} wins because every other idiot folded!`);}
+      game.handleAllPots();
+      game.winner = [];
+      for(let i=0; i<game.eligiblePlayers.length; i++){
+        game.winner.push(game.determineRanking(game.eligiblePlayers[i]));
+        game.winner[i].isWinner = true;
+        console.log(`Player ${game.winner[i].id + 1} wins because every other idiot folded!`);
+      }
       game.round = 5;
+      console.log(game.winner)
       setRound(game.round) //YOU GOTA ADD THE SIDE POT CREATION CODE HERE AS WELL!!! 
     } else {
       nextTurn();
