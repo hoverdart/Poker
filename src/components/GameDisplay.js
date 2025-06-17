@@ -1,5 +1,6 @@
 import React from "react";
 import Modal from 'react-bootstrap/Modal';
+import CurrentMove from "./CurrentMove";
 import {useState} from "react";
 
 
@@ -56,7 +57,7 @@ const GameDisplay = (props) => {
                 <h5 className="card-title"><strong>Player {player.id + 1} {player.id === props.game.playerID && "(You)"}</strong></h5>
                 <p className="card-text"><strong>Money:</strong> ${player.playerMoney}</p>
                 <p className="card-text"><strong>Money In:</strong> ${player.moneyIn}</p>
-                <p className="card-text"><strong>TOTAL Money In:</strong> ${player.totalMoneyIn}</p>
+                {/*<p className="card-text"><strong>TOTAL Money In:</strong> ${player.totalMoneyIn}</p> */}
                 <p className="card-text">
                   <strong>Hand:</strong>{" "}
                   {player.id !== props.game.playerID && props.round !== 5 ? "???" : 
@@ -119,6 +120,8 @@ const GameDisplay = (props) => {
           </div>
         ))}
       </div>
+
+      <CurrentMove message={props.message} />
 
       {/* Game Control Buttons */}
       {props.game.round === 5 ? (

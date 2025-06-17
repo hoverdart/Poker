@@ -96,62 +96,114 @@ class Player {
     }
     return false;
   }
-  //finds out the best hand type out of all possible hand combos
+  // ** RETURNS BEST HAND TYPE **
   type() {
-    let bestHandType = "high card"; // Default lowest hand
-    let possibleHands = this.getCombinations(this.fullHand, 5);
+    const handRankings = ["high card", "pair", "two pair", "three of a kind", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"];
+    let best = { rank: -1, values: [], combo: [], type: "high card" };
+    function compareValueArrays(arr1, arr2) {
+      for (let i = 0; i < Math.min(arr1.length, arr2.length); i++) {
+        if (arr1[i] !== arr2[i]) return arr1[i] - arr2[i];
+      }
+      return 0;
+    }
+    function isRoyal(values){
+      const royal = [10, 11, 12, 13, 14];
+      return royal.every(v => values.includes(v));
+    }
+    function isOrdered(cards){
+      const values = [...new Set(cards.map(c => c.value === 1 ? 14 : c.value))].sort((a, b) => a - b);
+      if (values.length < 5) return false;
+      for (let i = 0; i < values.length - 1; i++) 
+        if (values[i + 1] !== values[i] + 1) return false;
+      return true;
+    }
+    const possibleHands = this.getCombinations(this.fullHand, 5);
     for (let hand of possibleHands) {
-      let suitFlag = true;
-      for (let i = 1; i < hand.length; i++) {
-        if (hand[i].suit !== hand[i - 1].suit) {
-          suitFlag = false;
-          break;
-        }
+      const sorted = [...hand].sort((a, b) => {
+        const valA = a.value === 1 ? 14 : a.value;
+        const valB = b.value === 1 ? 14 : b.value;
+        return valB - valA;
+      });
+      const values = sorted.map(c => c.value === 1 ? 14 : c.value);
+      const suits = sorted.map(c => c.suit);
+      const counts = {};
+      for (let val of values) counts[val] = (counts[val] || 0) + 1;
+      const isFlush = suits.every(s => s === suits[0]);
+      const isStraight = isOrdered(sorted);
+      let rank = 0;
+      let handVals = [];
+      // Royal Flush
+      if (isFlush && isRoyal(values)) {
+        rank = 10;
+        handVals = [14, 13, 12, 11, 10];
       }
-      let handRank = 0; // Stores rank (higher = stronger hand)
-      // **Check for Royal Flush**
-      if (suitFlag) {
-        let royalFlush = ["Ace", "King", "Queen", "Jack", "10"];
-        if (hand.every(card => royalFlush.includes(card.name))) { //checks every card in hand, if its in royalFlush
-          handRank = 10;
-        }
+      // Straight Flush
+      else if (isFlush && isStraight) {
+        rank = 9;
+        handVals = values;
       }
-      // **Check for Straight Flush**
-      if (suitFlag && this.isOrdered(hand)) {
-        handRank = Math.max(handRank, 9);
+      // Four of a Kind
+      else if (Object.values(counts).includes(4)) {
+        rank = 8;
+        const quad = parseInt(Object.keys(counts).find(k => counts[k] === 4));
+        const kicker = Math.max(...Object.keys(counts).filter(k => k !== quad).map(Number));
+        handVals = [quad, quad, quad, quad, kicker];
       }
-      // Count occurrences of each card value
-      let countsOfEach = new Array(13).fill(0);
-      for (let card of hand) {
-        countsOfEach[card.value - 1]++;
+      // Full House
+      else if (Object.values(counts).includes(3) && Object.values(counts).includes(2)) {
+        rank = 7;
+        const three = parseInt(Object.keys(counts).find(k => counts[k] === 3));
+        const pair = parseInt(Object.keys(counts).find(k => counts[k] === 2));
+        handVals = [three, three, three, pair, pair];
       }
-      let pairs = 0, triple = false, quad = false;
-      for (let count of countsOfEach) {
-        if (count === 2) pairs++;
-        else if (count === 3) triple = true;
-        else if (count === 4) quad = true;
+      // Flush
+      else if (isFlush) {
+        rank = 6;
+        handVals = values;
       }
-      // **Four of a Kind**
-      if (quad) handRank = Math.max(handRank, 8);
-      // **Full House**
-      if (triple && pairs === 1) handRank = Math.max(handRank, 7);
-      // **Flush**
-      if (suitFlag) handRank = Math.max(handRank, 6);
-      // **Straight**
-      if (this.isOrdered(hand)) handRank = Math.max(handRank, 5);
-      // **Three of a Kind**
-      if (triple) handRank = Math.max(handRank, 4);
-      // **Two Pair**
-      if (pairs === 2) handRank = Math.max(handRank, 3);
-      // **One Pair**
-      if (pairs === 1) handRank = Math.max(handRank, 2);
-      // Update best hand if this hand is stronger
-      const handRankings = ["high card", "pair", "two pair", "three of a kind", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"];
-      if (handRank > handRankings.indexOf(bestHandType)) {
-        bestHandType = handRankings[handRank - 1];
+      //Straight
+      else if (isStraight) {
+        rank = 5;
+        handVals = values;
+      }
+      //Three of a Kind
+      else if (Object.values(counts).includes(3)) {
+        rank = 4;
+        const three = parseInt(Object.keys(counts).find(k => counts[k] === 3));
+        const kickers = Object.keys(counts).filter(k => k !== three).map(Number).sort((a, b) => b - a);
+        handVals = [three, three, three, ...kickers];
+      }
+      // Two Pair
+      else if (Object.values(counts).filter(v => v === 2).length === 2) {
+        rank = 3;
+        const pairs = Object.keys(counts).filter(k => counts[k] === 2).map(Number).sort((a, b) => b - a);
+        const kicker = parseInt(Object.keys(counts).find(k => counts[k] === 1));
+        handVals = [pairs[0], pairs[0], pairs[1], pairs[1], kicker];
+      }
+      // One Pair
+      else if (Object.values(counts).includes(2)) {
+        rank = 2;
+        const pair = parseInt(Object.keys(counts).find(k => counts[k] === 2));
+        const kickers = Object.keys(counts).filter(k => k !== pair).map(Number).sort((a, b) => b - a);
+        handVals = [pair, pair, ...kickers];
+      }
+      // High Card
+      else{
+        rank = 1;
+        handVals = values;
+      }
+      // Update best if stronger
+      if (rank > best.rank ||(rank === best.rank && compareValueArrays(handVals, best.values) > 0)) {
+        best = {
+          rank,
+          values: handVals,
+          combo: sorted,
+          type: handRankings[rank - 1],
+        };
       }
     }
-    this.handType = bestHandType;
+    this.handType = best.type;
+    this.bestCombo = best.combo;
   }
 
   goAllIn(game) {
@@ -161,6 +213,7 @@ class Player {
     this.moneyIn += this.playerMoney;
     this.totalMoneyIn += this.playerMoney;
     this.playerMoney = 0;
+    game.handleAllPots();
   }
 }
 
@@ -212,10 +265,7 @@ class Game {
     this.spectatingPlayers = [];
     this.activePlayers = [];
     this.redoTurn = -999;
-
     //Depositing money for the winnah
-    console.log(this.winner);
-    console.log(this.allPots);
     if (this.winner !== 0) {
       for(let i=0; i<this.allPots.length; i++){
         this.winner[i].playerMoney += this.allPots[i];
@@ -248,8 +298,6 @@ class Game {
         this.activePlayers.push(this.allPlayers[i]);
       }
     }
-
-    console.log("The Active Players Are: ", this.activePlayers);
     //The Changes Below ONLY APPLY TO ACTIVE PLAYERS.
     for (let i = 0; i < this.activePlayers.length; i++) { // Player's decks are remade, resets everything, moves small/big blinds up
       this.activePlayers[i].playerHand = [this.deck.fullDeck.shift(), this.deck.fullDeck.shift()];
@@ -277,7 +325,6 @@ class Game {
           this.activePlayers[i].moneyIn += this.activePlayers[i].playerMoney;
           this.activePlayers[i].playerMoney = 0;
           this.activePlayers[i].allIn = true;
-          console.log("Small blind player", i + 1, "is all in")
         } else {
           this.activePlayers[i].playerMoney -= this.small;
           this.activePlayers[i].moneyIn += this.small;
@@ -291,7 +338,6 @@ class Game {
           this.activePlayers[playerWithBigBlind].moneyIn += this.activePlayers[playerWithBigBlind].playerMoney;
           this.activePlayers[playerWithBigBlind].playerMoney = 0;
           this.activePlayers[playerWithBigBlind].allIn = true;
-          console.log("Big blind player", playerWithBigBlind + 1, "is all in")
         } else {
           this.activePlayers[playerWithBigBlind].playerMoney -= this.big;
           this.activePlayers[playerWithBigBlind].moneyIn += this.big;
@@ -307,11 +353,6 @@ class Game {
         break;
       }
     }
-    console.log(this.allPlayers)
-    console.log(this.activePlayers)
-    console.log(this.spectatingPlayers)
-
-    this.print()
   }
   //Moves on round, creates community cards, gets the winner, resets current bet/money In if round isn't first round
   nextRound() { 
@@ -347,40 +388,36 @@ class Game {
           this.winner.push(this.determineRanking(this.eligiblePlayers[i]));
           this.winner[i].isWinner = true;
         }
-        console.log(this.winner);
       }
     }
-    this.print()
   }
   //Finds the winners by ranking hands, then card values, then suits.
   determineRanking(playerList = this.activePlayers) {
     function comparePlayers(playerA, playerB) {
-      let handRanking = ["high card", "pair", "two pair", "three of a kind", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"];
-      // First Test: Compare Hand Types
+      const handRanking = ["high card", "pair", "two pair", "three of a kind", "straight", "flush", "full house", "four of a kind", "straight flush", "royal flush"];
+      const suitRank = { clubs: 1, diamonds: 2, hearts: 3, spades: 4 };
+      // Step 1: Compare hand type
       let rankA = handRanking.indexOf(playerA.handType);
       let rankB = handRanking.indexOf(playerB.handType);
-      if (rankA !== rankB) return rankB - rankA; // Reverse order so highest rank is first
-      //Second Test: Compare Highest Valued Card
-      let maxValA = Math.max((playerA.playerHand[0].value === 1 ? 14 : playerA.playerHand[0].value), (playerA.playerHand[1].value === 1 ? 14 : playerA.playerHand[1].value));
-      let maxValB = Math.max((playerB.playerHand[0].value === 1 ? 14 : playerB.playerHand[0].value), (playerB.playerHand[1].value === 1 ? 14 : playerB.playerHand[1].value));
-      if (maxValA !== maxValB) return maxValB - maxValA;
-      // Third Test: Compare Suits(spades > hearts > diamonds > clubs)
-      const suitRank = { clubs: 1, diamonds: 2, hearts: 3, spades: 4 };
-      if (playerA.playerHand[0].value > playerA.playerHand[1].value) { maxValA = suitRank[playerA.playerHand[0].suit]; } else { maxValA = suitRank[playerA.playerHand[1].suit]; }
-      if (playerB.playerHand[0].value > playerB.playerHand[1].value) { maxValB = suitRank[playerB.playerHand[0].suit]; } else { maxValB = suitRank[playerB.playerHand[1].suit]; }
-      if (maxValA !== maxValB) {
-        return maxValB - maxValA;
+      if (rankA !== rankB) return rankB - rankA;
+      // Step 2: Compare bestCombo card-by-card
+      for (let i = 0; i < 5; i++) {
+        let valA = playerA.bestCombo[i].value === 1 ? 14 : playerA.bestCombo[i].value;
+        let valB = playerB.bestCombo[i].value === 1 ? 14 : playerB.bestCombo[i].value;
+        if (valA !== valB) return valB - valA;
       }
-      //FINAL Test: Sum Total Card Values
-      let valueA = playerA.fullHand.reduce((sum, card) => sum + (card.value === 1 ? 14 : card.value), 0);
-      let valueB = playerB.fullHand.reduce((sum, card) => sum + (card.value === 1 ? 14 : card.value), 0);
-      if (valueA !== valueB) {
-        return valueB - valueA; // Higher card sum wins
+      // Step 3: Tiebreaker by suits (only if exact card values are equal)
+      for (let i = 0; i < 5; i++) {
+        let suitA = suitRank[playerA.bestCombo[i].suit];
+        let suitB = suitRank[playerB.bestCombo[i].suit];
+        if (suitA !== suitB) return suitB - suitA;
       }
-      return 0;
+      // Step 4: Fallback (sum of full hand — not really poker-accurate but good backup)
+      let valueA = playerA.fullHand.reduce((sum, c) => sum + (c.value === 1 ? 14 : c.value), 0);
+      let valueB = playerB.fullHand.reduce((sum, c) => sum + (c.value === 1 ? 14 : c.value), 0);
+      return valueB - valueA;
     }
     let playas = [];
-
     for (let i = 0; i < playerList.length; i++) {
       if (!playerList[i].folded) playas.push(playerList[i]);
     }
@@ -489,7 +526,6 @@ class Game {
       }
       let tempSidePot = 0
       let listOfPlayers = []
-      console.log(minMoneyIn)
       for (let i = 0; i < this.activePlayers.length; i++) {
         //The conditional will check if the player even can put money in. If they can, it'll subtract the minimum and add them to the list of ppl who can claim this.
         if (this.activePlayers[i].tempMoneyIn > 0) { //this'll subtract the minimum amount of money somoene has put in from the total amt of money this specific player has put in.
@@ -505,12 +541,6 @@ class Game {
     }
     // **SIDE POT CREATION CODE ENDS HERE **
   }
-  //Prints out all info
-  print() {
-    console.log("Players Info:", this.activePlayers);
-    console.log("Community Cards: ", this.boardCards);
-    console.log(this);
-  }
 }
 
 function App() {
@@ -520,6 +550,7 @@ function App() {
   const [round, setRound] = useState(1); //sets round number
   const [turn, setTurn] = useState(0); // First player after dealer, FIX THIS
   const [time, toGo] = useState(0); //makes it so players are cycled after rounds
+  const [message, newMessage] = useState('');
   const [nextR, changeNextR] = useState(false); //un-disables round button after round 4/player cycling
 
   // **IMPORTANT FUNCTIONS FOR GAME HANDLING **
@@ -537,6 +568,7 @@ function App() {
   function handleNextRound() {
     if (game) {
       game.nextRound();
+      newMessage('');
       setGame(game);
       setRound(game.round);
       changeNextR(false);
@@ -565,7 +597,6 @@ function App() {
         setGameNum(game.game);
         setRound(game.round);
         changeNextR(false);
-        console.log(game);
         setTurn(game.redoTurn);
         toGo(time + 1);
       }
@@ -573,7 +604,6 @@ function App() {
   }
 
   //**TURNS AND AI FUNCTIONS - NEEDS FIXING FOR LATER**
-  //Handles player switching. FIX LATER! NEEDS TO START AFTER DEALER, AND NEEDS TO CYCLE AFTER BETS/RAISES!
   const nextTurn = () => {
     let i = 1;
     let tempTurn = turn;
@@ -588,32 +618,86 @@ function App() {
     }
     changeNextR(true);
   };
-  //Handles "AI" Moves (Random Choice between options)
-  const aiMove = () => { //general gameplay: if probability is less than 10, fold. less than 30, call, raise/call as many times as the probability is 5 greater.
+  //Handles AI Moves 
+  const aiMove = () => {
     setTimeout(() => {
-      let potOdds = (game.currentBet - game.activePlayers[turn].moneyIn)/(game.pot + game.currentBet - game.activePlayers[turn].moneyIn);
-      let winningProbability = game.runSimulation(game.activePlayers[turn], game.aiDifficulty, 5000) //returns decimal value
-      let dynamicWinComparison= (game.round >= 3 ? 0.70 : game.round >= 2 ? 0.50 : 0.35) //changes depending on the round
-      console.log("Probability of Winning (Player ",turn+1,"): ", winningProbability * 100, "% | Pot Odds: ",potOdds*100,"%"); 
-      //Basic AI Code, Must Be Changed!!
-      if (winningProbability > potOdds) { //it's worth it to call or raise. One issue: potOdds is usually super super high at the beginning, and gets lower after ppl start calling. 
-        if (winningProbability >= dynamicWinComparison) { //random percentage, should raise! - change the percentage (0.35) each ROUND - 35, 50, 70?
-          let newPotOdds = potOdds;
-          let raiseAmt = 0;
-          while (winningProbability > newPotOdds) {
-            if ((game.currentBet - game.activePlayers[turn].moneyIn + raiseAmt) < game.activePlayers[turn].playerMoney) {
-              raiseAmt += 1;
-            } else { break; }
-            newPotOdds = (game.currentBet - game.activePlayers[turn].moneyIn + raiseAmt) / (game.pot + game.currentBet + raiseAmt - game.activePlayers[turn].moneyIn);
-          }
-          raise(raiseAmt);
-        } else { call(); }
-      } else { //not worth it, so you should fold (this should be changed, as potOdds are always highest at the beginning)
-        if (winningProbability < 0.15) fold();
-        else call();
+      const player = game.activePlayers[turn];
+      const { card1, card2 } = player.playerHand; // Assuming player has card1 and card2
+      const stackSize = player.playerMoney;
+      const totalInvested = player.moneyIn;
+      const pot = game.pot;
+      const currentBet = game.currentBet;
+
+      // Pot odds calculation
+      const potOdds = (currentBet - totalInvested) / (pot + currentBet - totalInvested);
+      // AI behavior profiles by difficulty
+      const aiProfiles = {
+        1: { bluffChance: 0.05, raiseAggression: 0.6 },
+        2: { bluffChance: 0.1, raiseAggression: 1.0 },
+        3: { bluffChance: 0.15, raiseAggression: 1.3 },
+        4: { bluffChance: 0.25, raiseAggression: 2.0 },
+      };
+      const profile = aiProfiles[game.aiDifficulty] || aiProfiles[2];
+      // Round thresholds for dynamic play
+      const baseThreshold = game.round >= 3 ? 0.70 : game.round >= 2 ? 0.50 : 0.35;
+      // Adjust aggression based on chip stack
+      const isShortStacked = stackSize < pot * 0.5;
+      const aggressionMultiplier = isShortStacked ? 0.8 : 1.2;
+      const dynamicWinComparison = baseThreshold * aggressionMultiplier;
+      // --- Preflop logic using basic hand strength ---
+      const getPreflopStrength = (c1, c2) => {
+        const ranks = [c1.value, c2.value].sort((a, b) => b - a);
+        const suited = c1.suit === c2.suit;
+        const gap = Math.abs(ranks[0] - ranks[1]);
+
+        if (ranks[0] === ranks[1]) return 0.9; // pocket pair
+        if (suited && gap === 1) return 0.7; // suited connectors
+        if (ranks.includes(14) && ranks.includes(13)) return 0.75; // AK
+        if (suited && gap <= 2) return 0.6; // semi-connectors
+        return 0.4; // default
+      };
+
+      // Get win probability
+      let winningProbability;
+      if (game.round === 0) {
+        winningProbability = getPreflopStrength(card1, card2);
+      } else {
+        const simCount = game.round >= 3 ? 6000 : game.round >= 2 ? 4000 : 2000;
+        winningProbability = game.runSimulation(player, game.aiDifficulty, simCount);
       }
-    }, game.aiDifficulty === 1 || game.aiDificulty === 4 ? 2000 : 500); //Cooldown only occurs if the AI difficulty is set to 1 (easy) or 4 (impossible), both of which are instant
+      //console.log(`AI Player ${turn + 1} | Win %: ${(winningProbability * 100).toFixed(2)} | Pot Odds: ${(potOdds * 100).toFixed(2)}`);
+      // --- Bluffing ---
+      if (!player.hasBluffed && Math.random() < profile.bluffChance && game.round >= 2) {
+        player.hasBluffed = true;
+        const bluffRaise = Math.floor(pot * 0.4);
+        raise(Math.min(bluffRaise, stackSize - currentBet));
+        return;
+      }
+      // --- Core Decision Logic ---
+      if (winningProbability > potOdds) {
+        // Worth it to stay in
+        if (winningProbability >= dynamicWinComparison) {
+          // Raise with more confidence
+          const raiseAmount = Math.floor((winningProbability - potOdds) * pot * profile.raiseAggression);
+          const cappedRaise = Math.min(raiseAmount, stackSize - currentBet);
+          if (cappedRaise > 0) raise(cappedRaise);
+          else call();
+        }else{
+          call();
+        }
+      }else{
+        // Risky call — fold or call depending on chance
+        if (winningProbability < 0.1 && potOdds > 0.5) {
+          fold();
+        } else if (winningProbability < 0.2 && Math.random() > 0.7) {
+          fold(); // random folds for realism
+        } else {
+          call();
+        }
+      }
+    }, game.aiDifficulty === 1 || game.aiDifficulty === 4 ? 2000 : 500);
   };
+
   //Runs the aiMove() every time the turn switches/the round starts/the game starts till rounds end
   useEffect(() => {
     if (game && game.activePlayers[turn].id !== game.playerID && game.round !== 5) {
@@ -624,32 +708,35 @@ function App() {
 
   // **ALL PLAYER/AI FUNCTIONS**
   function raise(money = game.big) { //Bets the equivalent of the LARGE BLIND to whatever the highest bet currently is
-    console.log("Player ", game.activePlayers[turn].id + 1, "has 'raised'");
+    const mes = ("Player "+ (game.activePlayers[turn].id + 1)+ " has 'raised'");
+    newMessage(mes);
     game.activePlayers[turn].turn = "raise";
     if (game.activePlayers[turn].id !== game.playerID) money = Math.floor(Math.random() * money + 1);
     let betAmount = game.currentBet + money;
     if (game.activePlayers[turn].playerMoney < betAmount - game.activePlayers[turn].moneyIn) {
-      console.log("Player", game.activePlayers[turn].id + 1, "doesn't have enough money to raise. will CALL instead.");
+      console.log("Player", game.activePlayers[turn].id + 1, "doesn't have enough money to raise. Will CALL instead.");
       call();
     } else {
       game.activePlayers[turn].playerMoney -= (betAmount - game.activePlayers[turn].moneyIn);
       game.activePlayers[turn].totalMoneyIn += (betAmount - game.activePlayers[turn].moneyIn);
       game.activePlayers[turn].moneyIn = betAmount;
       game.pot += betAmount - game.activePlayers[turn].moneyIn;
-      
       game.currentBet = betAmount;
       game.redoTurn = turn;
+      game.handleAllPots();
       nextTurn();
     }
   }
   function call() {
     //Check if they have enough money
     if (game.activePlayers[turn].playerMoney - (game.currentBet - game.activePlayers[turn].moneyIn) < 0) {
-      console.log("Player", game.activePlayers[turn].id + 1, "does not have enough money to call. ALL IN instead.");
+      const mes = ("Player " + (game.activePlayers[turn].id + 1) + " is going ALL IN.");
+      newMessage(mes);
       game.activePlayers[turn].goAllIn(game);
       nextTurn();
     } else {
-      console.log("Player", game.activePlayers[turn].id + 1, "has 'called'");
+      const mes = ("Player "+ (game.activePlayers[turn].id + 1) + " has 'called'");
+      newMessage(mes);
       game.activePlayers[turn].turn = "call";
       // Find highest bet
       let highestBet = 0;
@@ -670,21 +757,25 @@ function App() {
 
           // RUN THE SIDE POT CREATION CODE HERE INSTEAD OF THE BELOW!!!
           game.pot += callAmount;
+          game.handleAllPots();
         }
       }else{
-        console.log("Player", player.id + 1, "is already at the highest bet/ has CHECKED.");
+        const mes = "Player " + (game.activePlayers[turn].id+1) + " has checked.";
+        newMessage(mes);
       }
       game.currentBet = highestBet;
       nextTurn();
     }
   }
   function check() {
-    console.log("Player ", game.activePlayers[turn].id + 1, "has 'checked'");
+    const mes = "Player "+( game.activePlayers[turn].id + 1)+ " has 'checked'";
+    newMessage(mes);
     game.activePlayers[turn].turn = "check";
     nextTurn();
   }
   function fold() { //Prints the player who folded, sets their .folded value to True, CHECKS IF OTHER PPL FOLDED TOO 
-    console.log("Player ", game.activePlayers[turn].id + 1, "has 'folded'");
+    const mes = ("Player "+ (game.activePlayers[turn].id + 1)+ " has 'folded'");
+    newMessage(mes);
     game.activePlayers[turn].folded = true; // This renders them unable to play/be selected, and adds a red border to show it.
 
     //CHECKING IF OTHER PPL FOLDED. SIMILAR CODE SHOULD BE ADDED TO THE ALL-IN PORTION. 
@@ -698,7 +789,6 @@ function App() {
         console.log(`Player ${game.winner[i].id + 1} wins because every other idiot folded!`);
       }
       game.round = 5;
-      console.log(game.winner)
       setRound(game.round) //YOU GOTA ADD THE SIDE POT CREATION CODE HERE AS WELL!!! 
     } else {
       nextTurn();
@@ -750,7 +840,7 @@ function App() {
       <section className="container mt-4">
         {game && (
           <>
-            <GameDisplay gameNum={gameNum} round={round} game={game} handleNextRound={handleNextRound} handleNextGame={handleNextGame} turn={turn} check={check} fold={fold} raise={raise} call={call} nextR={nextR} />
+            <GameDisplay gameNum={gameNum} round={round} game={game} handleNextRound={handleNextRound} handleNextGame={handleNextGame} turn={turn} check={check} fold={fold} raise={raise} call={call} nextR={nextR} message={message} />
           </>
         )}
       </section>
