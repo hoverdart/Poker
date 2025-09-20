@@ -9,7 +9,7 @@ Play with state-of-the-art AI systems (random choice) that'll keep you challenge
 
 ### Credits
 
- [Waris 🕋](https://github.com/DarkRiderii)
+ [Waris 🕋](https://github.com/Abdullah-Waris)
 
  [Bedi Boy 🛏️](https://github.com/Arjinoodles)
 
